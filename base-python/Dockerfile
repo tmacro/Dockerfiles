@@ -1,6 +1,6 @@
 FROM tmacro/base:latest
 
-RUN apk_add python3
+RUN apk_add python py-pip
 
 ONBUILD ADD . /app
-ONBUILD RUN python3 -m pip install -r /app/requirements.txt
+ONBUILD RUN pip install -r /app/requirements.txt
