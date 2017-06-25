@@ -1,0 +1,23 @@
+#!/usr/bin/with-contenv sh
+
+# Initializes the variables used by the issue-certs and renew-certs scripts
+# Intended to be sourced
+
+# If LEGO_STAGING is non-empty use the staging api endpoint
+if [[ -z "$LEGO_STAGING" ]]; then
+	LEGO_URI="https://acme-v01.api.letsencrypt.org/directory"
+else
+	LEGO_URI="https://acme-staging.api.letsencrypt.org/directory"
+fi
+
+if [[ -z $LEGO_EMAIL ]]; then
+	LEGO_EMAIL="$CLOUDFLARE_EMAIL"
+fi
+
+for i in ${LEGO_DOMAINS//,/ }
+do
+	DOMAINS="$DOMAINS --domains=${i}"
+done
+
+
+LEGO_ARGS="--email=$LEGO_EMAIL --dns=$LEGO_PROVIDER --dns-resolvers=$LEGO_DNS_RESOLVERS --server=$LEGO_URI --accept-tos --pem --path=$LEGO_PATH --key-type=$LEGO_KEY_TYPE $DOMAINS"
