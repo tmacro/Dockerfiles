@@ -13,4 +13,4 @@ RUN tar xzf /tmp/s6-overlay-amd64.tar.gz -C / && rm /tmp/s6-overlay-amd64.tar.gz
 
 ENTRYPOINT ["/init"]
 
-CMD ["/bin/shd"]
+CMD ["/bin/sh"]
