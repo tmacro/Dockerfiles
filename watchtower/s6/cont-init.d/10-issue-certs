@@ -1,0 +1,32 @@
+#!/usr/bin/with-contenv sh
+
+for i in ${LEGO_DOMAINS//,/ }
+do
+    if [ ! -d "/etc/letsencrypt/live/$i" ]; then
+	    DOMAINS="$DOMAINS -d \"*.${i}\""
+    fi
+done
+
+if [ -z "$DOMAINS" ]; then
+    echo "No certificates need issuing! Exiting..."
+    exit 0
+fi
+
+if [ -z "LEGO_STAGING" ]; then
+    ACME_URL="https://acme-v02.api.letsencrypt.org/directory"
+else
+    ACME_URL="https://acme-staging-v02.api.letsencrypt.org/directory"
+fi
+
+CERTBOT_ARGS="certonly \
+    --non-interactive \
+    --agree-tos \
+    --dns-cloudflare \
+    --dns-cloudflare-credentials /root/.cloudflare \
+    -m \"$CLOUDFLARE_EMAIL\" \
+    --server $ACME_URL \
+    $DOMAINS"
+
+sh -c "/usr/bin/certbot $CERTBOT_ARGS"
+
+exec /usr/bin/install-certificates

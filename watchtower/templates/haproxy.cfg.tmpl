@@ -1,0 +1,68 @@
+{{ $local := . }}
+global
+	daemon
+	maxconn 4096
+	pidfile /var/run/haproxy.pid
+	tune.ssl.default-dh-param 4096
+	log 127.0.0.1	 local1 debug
+	ssl-default-bind-options force-tlsv12
+	ssl-default-bind-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+
+defaults
+	log global
+	mode http
+	option dontlognull
+	retries 3
+	option redispatch
+	option http-server-close
+	maxconn 2000
+	timeout connect 5s
+	timeout client 15min
+	timeout server 15min
+
+listen stats
+	bind *:1936
+	mode http
+	stats enable
+	stats hide-version
+	#stats realm Haproxy\ Statistics
+	stats uri /
+	#stats auth Username:Password
+	stats refresh 5s
+
+frontend public
+	bind *:80
+	option forwardfor
+	errorfile 503 /etc/haproxy/503.http
+
+    {{ if $local.Env.WT_HTTPS_ENABLED }}
+	bind *:443 ssl crt /etc/haproxy/certs.d
+	{{ end }}
+
+	{{ if $local.Env.WT_HTTPS_REDIR }}
+	acl is-http      ssl_fc,not
+	http-request redirect scheme https if is-http
+	{{ end }}
+	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
+	{{ with $value := index $containers 0}}
+	{{ if $value.Env.WT_SUBDOMAIN }}
+	acl host_{{ $host }}_sub hdr_beg(host) -i {{ $host }}
+	{{ end }}
+	{{ if $value.Env.WT_URI }}
+	acl host_{{ $host }}_uri path_beg /{{ $host }}
+	{{ end }}
+	
+	{{ if or $value.Env.WT_SUBDOMAIN $value.Env.WT_URI }}
+	use_backend bcknd_{{ $host }} if {{ if  $value.Env.WT_SUBDOMAIN }}host_{{ $host }}_sub{{ end }} {{ if $value.Env.WT_URI }}host_{{ $host }}_uri{{ end }}
+	{{ end }}
+	{{ end }}
+	{{ end }}
+
+{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
+backend bcknd_{{ $host }}
+	{{ range $index, $value := $containers }}
+	{{ with $address := $value.IP}}
+	server srv_{{printf "%.*s" 12 $value.ID}} {{ $address }}:{{ $value.Env.WT_PORT }} check inter 2s rise 3 fall 2
+	{{ end }}
+	{{ end }}
+{{ end }}

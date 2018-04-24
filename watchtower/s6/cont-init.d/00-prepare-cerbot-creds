@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv sh
+
+# Credentials will be stored in /root/.cloudflare
+echo "dns_cloudflare_api_key = $CLOUDFLARE_API_KEY" > /root/.cloudflare
+echo "dns_cloudflare_email = $CLOUDFLARE_EMAIL" >> /root/.cloudflare
+chmod 400 /root/.cloudflare

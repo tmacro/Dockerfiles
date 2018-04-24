@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv sh
+
+build_cert()
+{
+    cat "$1" "$2"
+}
+
+for i in ${LEGO_DOMAINS//,/ }
+do
+    cert_path="/etc/letsencrypt/live/${i}"
+    output="/etc/haproxy/certs.d/${i}.pem"
+    echo "$(build_cert ${cert_path}/fullchain.pem ${cert_path}/privkey.pem)" > "${output}"
+done

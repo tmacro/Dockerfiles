@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv sh
+
+exec docker-gen -watch -notify "reload-haproxy" /etc/haproxy/haproxy.cfg.tmpl /etc/haproxy/haproxy.cfg
