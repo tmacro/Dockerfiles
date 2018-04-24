@@ -52,15 +52,20 @@ frontend public
 	acl host_{{ $host }}_uri path_beg /{{ $host }}
 	{{ end }}
 	
-	{{ if or $value.Env.WT_SUBDOMAIN $value.Env.WT_URI }}
-	use_backend bcknd_{{ $host }} if {{ if  $value.Env.WT_SUBDOMAIN }}host_{{ $host }}_sub{{ end }} {{ if $value.Env.WT_URI }}host_{{ $host }}_uri{{ end }}
+	{{ if $value.Env.WT_SUBDOMAIN }}
+	use_backend bcknd_{{ $host }} if host_{{ $host }}_sub
+	{{ end }}
+	
+	{{ if $value.Env.WT_URI }}
+	use_backend bcknd_{{ $host }} if host_{{ $host }}_uri
+	{{ end }}
+	
 	{{ end }}
 	{{ end }}
-	{{ end }}
-
 {{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
 backend bcknd_{{ $host }}
 	{{ range $index, $value := $containers }}
+	{{ if and $value.Env.WT_ALIAS $value.Env.WT_PORT }}
 	{{ with $address := $value.IP}}
 	server srv_{{printf "%.*s" 12 $value.ID}} {{ $address }}:{{ $value.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
