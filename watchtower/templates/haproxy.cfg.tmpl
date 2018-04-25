@@ -70,4 +70,5 @@ backend bcknd_{{ $host }}
 	server srv_{{printf "%.*s" 12 $value.ID}} {{ $address }}:{{ $value.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
 	{{ end }}
+	{{ end }}
 {{ end }}
