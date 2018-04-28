@@ -46,10 +46,11 @@ frontend public
 	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
 	{{ with $value := index $containers 0}}
 	{{ if $value.Env.WT_SUBDOMAIN }}
-	acl host_{{ $host }}_sub hdr_beg(host) -i {{ $host }}
+	acl host_{{ $host }}_sub hdr(host) -i {{ $host }}
 	{{ end }}
+
 	{{ if $value.Env.WT_URI }}
-	acl host_{{ $host }}_uri path_beg /{{ $host }}
+	acl host_{{ $host }}_uri path_beg /{{ $host }}/
 	{{ end }}
 	
 	{{ if $value.Env.WT_SUBDOMAIN }}
