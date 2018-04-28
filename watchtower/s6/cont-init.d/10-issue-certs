@@ -1,7 +1,6 @@
 #!/usr/bin/with-contenv sh
 
-for i in ${LEGO_DOMAINS//,/ }
-do
+for i in ${LEGO_DOMAINS//,/ }; do
     if [ ! -d "/etc/letsencrypt/live/$i" ]; then
 	    DOMAINS="$DOMAINS -d \"*.${i}\""
     fi
@@ -12,9 +11,9 @@ if [ -z "$DOMAINS" ]; then
     exit 0
 fi
 
-if [ -z "LEGO_STAGING" ]; then
-    ACME_URL="https://acme-v02.api.letsencrypt.org/directory"
-else
+ACME_URL="https://acme-v02.api.letsencrypt.org/directory"
+if [ ! -z "$LEGO_STAGING" ]; then
+    echo "Requesting staging certificate!"
     ACME_URL="https://acme-staging-v02.api.letsencrypt.org/directory"
 fi
 
@@ -29,4 +28,4 @@ CERTBOT_ARGS="certonly \
 
 sh -c "/usr/bin/certbot $CERTBOT_ARGS"
 
-exec /usr/bin/install-certificates
+exec /usr/bin/install-certificates 
