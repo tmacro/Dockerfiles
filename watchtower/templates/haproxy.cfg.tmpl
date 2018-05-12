@@ -46,7 +46,7 @@ frontend public
 	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
 	{{ with $value := index $containers 0}}
 	{{ if $value.Env.WT_SUBDOMAIN }}
-	acl host_{{ $host }}_sub hdr(host) -i {{ $host }}
+	acl host_{{ $host }}_sub hdr_dom(host) -i {{ $host }}
 	{{ end }}
 
 	{{ if $value.Env.WT_URI }}
@@ -65,10 +65,10 @@ frontend public
 	{{ end }}
 {{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
 backend bcknd_{{ $host }}
-	{{ range $index, $value := $containers }}
-	{{ if and $value.Env.WT_ALIAS $value.Env.WT_PORT }}
-	{{ with $address := $value.IP}}
-	server srv_{{printf "%.*s" 12 $value.ID}} {{ $address }}:{{ $value.Env.WT_PORT }} check inter 2s rise 3 fall 2
+	{{ range $container := $containers }}
+	{{ if and $container.Env.WT_ALIAS $container.Env.WT_PORT }}
+	{{ with $network := $container.Networks | first }}
+	server srv_{{printf "%.*s" 12 $container.ID}} {{ $network.IP }}:{{ $container.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
 	{{ end }}
 	{{ end }}

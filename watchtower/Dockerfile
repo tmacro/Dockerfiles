@@ -5,9 +5,6 @@ ENV DOCKERGEN_VER 0.7.3
 ADD https://github.com/jwilder/docker-gen/releases/download/${DOCKERGEN_VER}/docker-gen-linux-amd64-${DOCKERGEN_VER}.tar.gz /tmp
 
 ADD ./scripts/reload-haproxy ./scripts/install-certificates /usr/bin/
-ADD ./scripts/503.http /etc/haproxy/503.http
-
-ADD ./templates/haproxy.cfg.tmpl /etc/haproxy/haproxy.cfg.tmpl
 
 RUN apk_add haproxy git openssl-dev gcc python3-dev linux-headers musl-dev libffi-dev \
     && tar -C /usr/bin -xvzf /tmp/docker-gen-linux-amd64-${DOCKERGEN_VER}.tar.gz \
@@ -24,3 +21,5 @@ RUN apk_add haproxy git openssl-dev gcc python3-dev linux-headers musl-dev libff
     && ln -s /usr/bin/reload-haproxy /etc/letsencrypt/renewal-hooks/post/10-reload-haproxy
 
 ADD ./s6 /etc
+ADD ./templates/haproxy.cfg.tmpl /etc/haproxy/haproxy.cfg.tmpl
+ADD ./scripts/503.http /etc/haproxy/503.http

@@ -7,23 +7,24 @@ for i in ${LEGO_DOMAINS//,/ }; do
 done
 
 if [ -z "$DOMAINS" ]; then
-    echo "No certificates need issuing! Exiting..."
-    exit 0
-fi
+    echo "No certificates need issuing!"
+else
+    ACME_SERVER="--server https://acme-v02.api.letsencrypt.org/directory"
+    if [ ! -z "$LEGO_STAGING" ]; then
+        echo "Requesting staging certificate!"
+        ACME_SERVER='--staging'
+    fi
 
-if [ ! -z "$LEGO_STAGING" ]; then
-    echo "Requesting staging certificate!"
-    STAGING='--staging'
-fi
-
-CERTBOT_ARGS="certonly $STAGING \
+    CERTBOT_ARGS="certonly \
     --non-interactive \
     --agree-tos \
     --dns-cloudflare \
     --dns-cloudflare-credentials /root/.cloudflare \
     -m \"$CLOUDFLARE_EMAIL\" \
+    $ACME_SERVER \
     $DOMAINS"
 
-sh -c "/usr/bin/certbot $CERTBOT_ARGS"
+    sh -c "/usr/bin/certbot $CERTBOT_ARGS"
+fi
 
 exec /usr/bin/install-certificates 
