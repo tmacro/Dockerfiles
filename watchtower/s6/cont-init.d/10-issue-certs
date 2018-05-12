@@ -11,19 +11,17 @@ if [ -z "$DOMAINS" ]; then
     exit 0
 fi
 
-ACME_URL="https://acme-v02.api.letsencrypt.org/directory"
 if [ ! -z "$LEGO_STAGING" ]; then
     echo "Requesting staging certificate!"
-    ACME_URL="https://acme-staging-v02.api.letsencrypt.org/directory"
+    STAGING='--staging'
 fi
 
-CERTBOT_ARGS="certonly \
+CERTBOT_ARGS="certonly $STAGING \
     --non-interactive \
     --agree-tos \
     --dns-cloudflare \
     --dns-cloudflare-credentials /root/.cloudflare \
     -m \"$CLOUDFLARE_EMAIL\" \
-    --server $ACME_URL \
     $DOMAINS"
 
 sh -c "/usr/bin/certbot $CERTBOT_ARGS"
