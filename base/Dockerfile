@@ -1,7 +1,7 @@
 FROM alpine:latest
 MAINTAINER Taylor McKinnon <mail@tmacs.space>
 
-ENV S6_VERSION 1.11.0.1
+ENV S6_VERSION 1.21.7.0
 
 # add apk_add convienence script
 ADD ./apk_add /usr/bin/
