@@ -1,0 +1,10 @@
+#!/usr/bin/with-contenv sh
+
+
+tiddlywiki_script=$(readlink -f $(which tiddlywiki))
+
+if [ ! -f "/.installed" ]; then
+	cd "${TIDDLYWIKI_DIR}"
+	/usr/bin/env node ${tiddlywiki_script} ${TIDDLYWIKI_NAME} --init server
+	touch /.installed
+fi

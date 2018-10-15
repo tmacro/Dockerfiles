@@ -1,0 +1,38 @@
+#!/usr/bin/with-contenv sh
+
+if [ -n "$WT_PORT" ]; then
+	TIDDLYWIKI_PORT="$WT_PORT"
+fi
+
+if [ -n "$WT_ALIAS" -a -n "$WT_URI" ]; then
+	TIDDLYWIKI_PREFIX="/$WT_ALIAS"
+fi
+
+if [ -n "$NODE_MEM" ]; then
+    # Based on rule of thumb from:
+    # http://fiznool.com/blog/2016/10/01/running-a-node-dot-js-app-in-a-low-memory-environment/
+    mem_node_old_space=$((($NODE_MEM*4)/5))
+    NODEJS_V8_ARGS="--max_old_space_size=$mem_node_old_space $NODEJS_V8_ARGS"
+fi
+
+tiddlywiki_script=$(readlink -f $(which tiddlywiki))
+
+cd "${TIDDLYWIKI_DIR}"
+echo exec /usr/bin/env node $NODEJS_V8_ARGS $tiddlywiki_script \
+											${TIDDLYWIKI_NAME} \
+											--server ${TIDDLYWIKI_PORT} \
+											$:/core/save/all \
+											text/plain \
+											text/html \
+											"${TIDDLYWIKI_USER}" \
+											"${TIDDLYWIKI_PASSWD}" \
+											0.0.0.0 ${TIDDLYWIKI_PREFIX}
+exec /usr/bin/env node $NODEJS_V8_ARGS $tiddlywiki_script \
+											${TIDDLYWIKI_NAME} \
+											--server ${TIDDLYWIKI_PORT} \
+											$:/core/save/all \
+											text/plain \
+											text/html \
+											"${TIDDLYWIKI_USER}" \
+											"${TIDDLYWIKI_PASSWD}" \
+											0.0.0.0 ${TIDDLYWIKI_PREFIX}
