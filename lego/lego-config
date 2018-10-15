@@ -5,9 +5,10 @@
 
 # If LEGO_STAGING is non-empty use the staging api endpoint
 if [[ -z "$LEGO_STAGING" ]]; then
-	LEGO_URI="https://acme-v01.api.letsencrypt.org/directory"
+	LEGO_URI="$LEGO_ACME_HOST"
 else
-	LEGO_URI="https://acme-staging.api.letsencrypt.org/directory"
+	LEGO_URI="$LEGO_ACME_STAGING_HOST"
+	echo ":: Issuing certificate in STAGING mode ::"
 fi
 
 if [[ -z $LEGO_EMAIL ]]; then

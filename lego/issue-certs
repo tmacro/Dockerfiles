@@ -1,5 +1,11 @@
 #!/usr/bin/with-contenv sh
 
+# CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY must be set with the apropriate credentials
+
+issue_cert() {
+	echo  "$1 $2"
+}
+
 action="$1"
 if [ -z "$action" ]; then
 	action="run"
@@ -10,9 +16,12 @@ source lego-config
 if [ "$action" = "renew" ]; then
 	action="renew --days $LEGO_RENEW_DAYS"
 fi
-# CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY must be set with the apropriate credentials
-/usr/bin/lego $LEGO_ARGS $action
 
-if [ -f "$LEGO_HOOKS_DIR/$action" ]; then
-	exec "$LEGO_HOOKS_DIR/$action"
+
+/usr/bin/lego $LEGO_ARGS $action | wait-grep "Server responded with a certificate"
+if [ "$?" == 0 ]; then
+	if [ -f "$LEGO_HOOKS_DIR/$action" ]; then
+		echo "Executing Hook $LEGO_HOOKS_DIR/$action"
+		exec "$LEGO_HOOKS_DIR/$action"
+	fi
 fi

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+printf '::'
+while read -r line; do
+	echo "$line" | grep "$1" > /dev/null
+	if [ "$?" == "0" ]; then
+		printf ":: Done\n"
+		exit 0
+	fi
+	printf '.'
+done
+printf '>> ERROR\n'
+exit 1
