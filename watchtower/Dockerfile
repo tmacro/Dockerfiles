@@ -1,24 +1,14 @@
-FROM tmacro/python:latest
+FROM tmacro/lego
+ENV DOCKERGEN_VER 0.7.4
 
-ENV DOCKERGEN_VER 0.7.3
-
-ADD https://github.com/jwilder/docker-gen/releases/download/${DOCKERGEN_VER}/docker-gen-linux-amd64-${DOCKERGEN_VER}.tar.gz /tmp
-
+ADD https://github.com/jwilder/docker-gen/releases/download/${DOCKERGEN_VER}/docker-gen-alpine-linux-amd64-${DOCKERGEN_VER}.tar.gz /tmp
 ADD ./scripts/reload-haproxy ./scripts/install-certificates /usr/bin/
 
-RUN apk_add haproxy git openssl-dev gcc python3-dev linux-headers musl-dev libffi-dev \
-    && tar -C /usr/bin -xvzf /tmp/docker-gen-linux-amd64-${DOCKERGEN_VER}.tar.gz \
-    && git clone https://github.com/certbot/certbot.git /tmp/certbot \
-    && cd /tmp/certbot \
-    && python setup.py install \
-    && cd certbot-dns-cloudflare \
-    && python setup.py install \
-    && cd /tmp \
-    && rm -rf /tmp/* \
+RUN apk_add haproxy \
+    && tar -C /usr/bin -xvzf /tmp/docker-gen-alpine-linux-amd64-${DOCKERGEN_VER}.tar.gz \
     && mkdir -p /etc/haproxy/certs.d \
-    && mkdir -p /etc/letsencrypt/renewal-hooks/post \
-    && ln -s /usr/bin/install-certificates /etc/letsencrypt/renewal-hooks/post/00-install-certificates \
-    && ln -s /usr/bin/reload-haproxy /etc/letsencrypt/renewal-hooks/post/10-reload-haproxy
+    && ln -s /usr/bin/install-certificates $LEGO_HOOKS_DIR/run \
+    && ln -s /usr/bin/install-certificates $LEGO_HOOKS_DIR/renew
 
 ADD ./s6 /etc
 ADD ./templates/haproxy.cfg.tmpl /etc/haproxy/haproxy.cfg.tmpl

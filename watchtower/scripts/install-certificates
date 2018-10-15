@@ -1,13 +1,11 @@
 #!/usr/bin/with-contenv sh
 
-build_cert()
-{
-    cat "$1" "$2"
-}
-
-for i in ${LEGO_DOMAINS//,/ }
-do
-    cert_path="/etc/letsencrypt/live/${i}"
+domains="$(echo $LEGO_DOMAINS | sed 's/*/_/g')"
+for i in ${domains//,/ }; do
+	echo "Installing certificate for $i"
+    cert_path="/$LEGO_PATH/certificates/${i}.pem"
     output="/etc/haproxy/certs.d/${i}.pem"
-    echo "$(build_cert ${cert_path}/fullchain.pem ${cert_path}/privkey.pem)" > "${output}"
+    cp "$cert_path" "$output"
 done
+
+exec reload-haproxy

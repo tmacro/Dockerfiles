@@ -20,6 +20,7 @@ defaults
 	timeout client 15min
 	timeout server 15min
 
+# Enable stats page on port 1936
 listen stats
 	bind *:1936
 	mode http
@@ -31,43 +32,42 @@ listen stats
 	stats refresh 5s
 
 frontend public
-	bind *:80
-	option forwardfor
-	errorfile 503 /etc/haproxy/503.http
+	bind *:80								# Bind to port 80
+	option forwardfor						# Enable X-Forwarded-For
+	errorfile 503 /etc/haproxy/503.http 	# Setup 503 page
 
-    {{ if $local.Env.WT_HTTPS_ENABLED }}
+    {{ if $local.Env.WT_HTTPS_ENABLED }}	# Bind to 443 if HTTPS is enabled
 	bind *:443 ssl crt /etc/haproxy/certs.d
 	{{ end }}
 
-	{{ if $local.Env.WT_HTTPS_REDIR }}
+	{{ if $local.Env.WT_HTTPS_REDIR }}		# Enable HTTP -> HTTP redirect if set
 	acl is-http      ssl_fc,not
 	http-request redirect scheme https if is-http
 	{{ end }}
-	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
-	{{ with $value := index $containers 0}}
-	{{ if $value.Env.WT_SUBDOMAIN }}
-	acl host_{{ $host }}_sub hdr_dom(host) -i {{ $host }}
+
+	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}	# Iter over containers
+	{{ with $value := index $containers 0}}						# Take first in group
+		{{ if $value.Env.WT_SUBDOMAIN }}
+			# ACL for subdomain based routing eg myservice.example.com
+			acl host_{{ $host }}_sub hdr_dom(host) -i {{ $host }}
+			# If so use the matching backend
+			use_backend bcknd_{{ $host }} if host_{{ $host }}_sub
+		{{ end }}
+
+		{{ if $value.Env.WT_URI }}
+			# ACL for path based routing eg example.com/myservice/
+			acl host_{{ $host }}_uri path_beg /{{ $host }}/
+			# If so use the matching backend
+			use_backend bcknd_{{ $host }} if host_{{ $host }}_uri
+		{{ end }}
+	{{ end }}
 	{{ end }}
 
-	{{ if $value.Env.WT_URI }}
-	acl host_{{ $host }}_uri path_beg /{{ $host }}/
-	{{ end }}
-	
-	{{ if $value.Env.WT_SUBDOMAIN }}
-	use_backend bcknd_{{ $host }} if host_{{ $host }}_sub
-	{{ end }}
-	
-	{{ if $value.Env.WT_URI }}
-	use_backend bcknd_{{ $host }} if host_{{ $host }}_uri
-	{{ end }}
-	
-	{{ end }}
-	{{ end }}
-{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}
-backend bcknd_{{ $host }}
-	{{ range $container := $containers }}
-	{{ if and $container.Env.WT_ALIAS $container.Env.WT_PORT }}
-	{{ with $network := $container.Networks | first }}
+	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }} 			# Iter over containers, group by Alias
+	backend bcknd_{{ $host }}											# Create our backend
+		{{ range $container := $containers }}							# Iter over group
+	{{ if and $container.Env.WT_ALIAS $container.Env.WT_PORT }}			# If the container defines a port
+	{{ with $network := $container.Networks | first }}					# Grab it and add the container as a server
 	server srv_{{printf "%.*s" 12 $container.ID}} {{ $network.IP }}:{{ $container.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
 	{{ end }}
