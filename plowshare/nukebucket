@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+
+import sys
+from boto3 import Session
+from botocore.handlers import set_list_objects_encoding_type_url
+from pprint import pprint
+import logging
+import argparse
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        prog=sys.argv[0],
+        description='For when your feeling like Project Plowshare sounded like a good idea....')
+    parser.add_argument('-b', '--bucket', action='store', help='Bucket to nuke')
+    parser.add_argument('-d', '--delete', action='store_true', help='Delete the bucket after nuking it')
+    parser.add_argument('--host', action='store', help='Host to nuke it on')
+    parser.add_argument('-a', '--access-key', action='store', help='Access key for host')
+    parser.add_argument('-s', '--secret-key', action='store', help='Secret key for host')
+    parser.add_argument('-p', '--profile', action='store', help='Use awscli profiles for auth')
+    parser.add_argument('-y', '--yes', action='store_true', help='Assume yes to any user prompts')
+    return parser.parse_args()
+
+args = get_args()
+
+def build_client(ak=None, sk=None, host=None, profile=None):
+    if profile is not None and (ak is not None or sk is not None):
+        print('You can use only a profile or an access and secret key, not both!')
+        sys.exit(1)
+    sesh_kwargs = { k:v for k,v in dict(
+        aws_access_key_id=ak,
+        aws_secret_access_key=sk,
+        profile_name=profile
+    ).items() if v is not None}
+    res_kwargs = dict(endpoint_url=host) if host is not None else {}
+    return Session(**sesh_kwargs).resource('s3', **res_kwargs)
+
+s3_client = build_client(args.access_key, args.secret_key, args.host, args.profile)
+
+def cleanup_bucket(bucket):
+    print('Nuking %s...'%bucket.name)
+    bucket.object_versions.all().delete()
+    if args.delete:
+        print('Bucket empty, deleting %s...'%bucket.name)
+        bucket.delete()
+
+def list_buckets(client):
+    resp = client.meta.client.list_buckets()
+    for b in resp['Buckets']:
+        yield b['Name']
+
+def build_bucket(name):
+    return s3_client.Bucket(name)
+
+if args.bucket:
+    cleanup_bucket(build_bucket(args.bucket))
+else:
+    print('This will delete ALL data from your cloud! Are you sure?')
+    ans = input('(y,N)').lower().strip()
+    if ans == '' or ans == 'n' or ans == 'N':
+        sys.exit(0)
+    cleaned = 0
+    for bucket in map(build_bucket, list_buckets(s3_client)):
+        cleanup_bucket(bucket)
+        cleaned += 1
+    if cleaned > 0:
+        print('Nuked %i bucket%s'%(cleaned, 's' if cleaned > 1 else ''))
+    else:
+        print('No buckets found!')
