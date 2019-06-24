@@ -1,13 +1,13 @@
 FROM golang:alpine as builder
 
-ENV LEGO_VERSION 1.0.1
+ENV LEGO_VERSION 2.6.0
 
-WORKDIR /go/src/github.com/xenolf/lego
+WORKDIR /go/src/github.com/go-acme/lego
 
-RUN apk --update add git gawk && \
-	git clone https://github.com/xenolf/lego.git . && \
+RUN apk --update add git gawk make && \
+	git clone https://github.com/go-acme/lego.git . && \
 	git checkout tags/v${LEGO_VERSION} && \
-	go build -ldflags="-s -X main.version=${LEGO_VERSION}"
+	make generate-dns build
 
 
 
@@ -25,7 +25,7 @@ ENV LEGO_STAGING TRUE
 
 RUN apk_add ca-certificates
 
-COPY --from=builder /go/src/github.com/xenolf/lego/lego /usr/bin/lego
+COPY --from=builder /go/src/github.com/go-acme/lego/dist/lego /usr/bin/lego
 COPY ./issue-certs ./lego-config ./wait-grep /usr/bin/
 RUN chmod +x /usr/bin/issue-certs /usr/bin/wait-grep && \
 	mkdir -p $LEGO_HOOKS_DIR
