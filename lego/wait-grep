@@ -1,7 +1,10 @@
 #!/bin/sh
 
+OUTPUT=""
+
 printf '::'
 while read -r line; do
+	OUTPUT="$OUTPUT$line\n"
 	echo "$line" | grep "$1" > /dev/null
 	if [ "$?" == "0" ]; then
 		printf ":: Done\n"
@@ -10,4 +13,5 @@ while read -r line; do
 	printf '.'
 done
 printf '>> ERROR\n'
+echo -e "$OUTPUT"
 exit 1

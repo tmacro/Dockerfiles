@@ -19,9 +19,10 @@ fi
 
 
 /usr/bin/lego $LEGO_ARGS $action | wait-grep "Server responded with a certificate"
-if [ "$?" == 0 ]; then
-	if [ -f "$LEGO_HOOKS_DIR/$action" ]; then
-		echo "Executing Hook $LEGO_HOOKS_DIR/$action"
-		exec "$LEGO_HOOKS_DIR/$action"
-	fi
+if [ "$?" != 0 ]; then
+	exit  "$?"
+fi
+if [ -f "$LEGO_HOOKS_DIR/$action" ]; then
+	echo "Executing Hook $LEGO_HOOKS_DIR/$action"
+	exec "$LEGO_HOOKS_DIR/$action"
 fi
