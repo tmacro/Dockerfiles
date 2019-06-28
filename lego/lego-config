@@ -3,22 +3,90 @@
 # Initializes the variables used by the issue-certs and renew-certs scripts
 # Intended to be sourced
 
-# If LEGO_STAGING is non-empty use the staging api endpoint
-if [[ -z "$LEGO_STAGING" ]]; then
-	LEGO_URI="$LEGO_ACME_HOST"
-else
-	LEGO_URI="$LEGO_ACME_STAGING_HOST"
-	echo ":: Issuing certificate in STAGING mode ::"
-fi
 
-if [[ -z $LEGO_EMAIL ]]; then
+if [ -z $LEGO_EMAIL ]; then
 	LEGO_EMAIL="$CLOUDFLARE_EMAIL"
 fi
 
-for i in ${LEGO_DOMAINS//,/ }
-do
-	DOMAINS="$DOMAINS --domains=${i}"
-done
+# If LEGO_STAGING is non-empty use the staging api endpoint
+_server() {
+	local server='--server'
+	if [ -z "$LEGO_STAGING" ]; then
+		server="$server $LEGO_ACME_HOST"
+	else
+		server="$server $LEGO_ACME_STAGING_HOST"
+		echo ":: Issuing certificate in STAGING mode ::" > /dev/stderr
+	fi
+	echo -n "$server"
+}
+
+_domains() {
+	local domains=''
+	for i in ${LEGO_DOMAINS//,/ }
+	do
+		domains="$DOMAINS --domains=${i}"
+	done
+	echo -n "$domains"
+}
+
+_challenge_dns() {
+	if [ -z "$LEGO_DNS_PROVIDER" ]; then
+		echo "You must specify a dns provider to use the dns-01 challenge"
+		exit 1
+	fi
+	local challenge="--dns $LEGO_DNS_PROVIDER"
+	if [ -n "$LEGO_DNS_RESOLVER" ]; then
+		challenge="$challenge --dns.resolver $LEGO_DNS_RESOLVER"
+	fi
+	if [ -n "$LEGO_DNS_TIMEOUT" ]; then
+		challenge="$challenge --dns-timeout $LEGO_DNS_TIMEOUT"
+	fi
+	echo -n "$challenge"
+}
+
+_challenge_http() {
+	local challenge='--http'
+	if [ -n "$LEGO_HTTP_PORT" ]; then
+		challenge="$challenge --http.port $LEGO_HTTP_PORT"
+	fi
+	if [ -n "$LEGO_HTTP_TIMEOUT" ]; then
+		challenge="$challenge --http-timeout $LEGO_HTTP_TIMEOUT"
+	fi
+	echo -n "$challenge"
+}
+
+_challenge_tls() {
+	local challenge='--tls'
+	if [ -n "$LEGO_TLS_PORT" ]; then
+		challenge="$challenge --tls.port $LEGO_TLS_PORT"
+	fi
+	if [ -n "$LEGO_TLS_TIMEOUT" ]; then
+		challenge="$challenge --tls-timeout $LEGO_TLS_TIMEOUT"
+	fi
+	echo -n "$challenge"
+}
+
+_challenges() {
+	local challenges=''
+	for i in ${LEGO_CHALLENGE//,/ }; do
+		case $i in
+			dns)
+				challenges="$challenges $(_challenge_dns)"
+				;;
+			http)
+				challenges="$challenges $(_challenge_http)"
+				;;
+			tls)
+				challenges="$challenges $(_challenge_tls)"
+				;;
+			*)
+				echo "Unknown challenge type \"$1\". Unable to configure challenges"
+				exit 1
+				;;
+		esac
+	done
+	echo -n "$challenges"
+}
 
 
-LEGO_ARGS="--email=$LEGO_EMAIL --dns=$LEGO_PROVIDER --dns-resolvers=$LEGO_DNS_RESOLVERS --server=$LEGO_URI --accept-tos --pem --path=$LEGO_PATH --key-type=$LEGO_KEY_TYPE $DOMAINS"
+LEGO_ARGS="--email=$LEGO_EMAIL --accept-tos --pem --path=$LEGO_PATH --key-type=$LEGO_KEY_TYPE $(_challenges) $(_server) $(_domains)"

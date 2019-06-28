@@ -13,8 +13,9 @@ RUN apk --update add git gawk make && \
 
 FROM tmacro/base:latest
 
-ENV LEGO_PROVIDER cloudflare
-ENV LEGO_DNS_RESOLVERS 8.8.8.8
+ENV LEGO_CHALLENGE dns
+ENV LEGO_DNS_PROVIDER cloudflare
+ENV LEGO_DNS_RESOLVER 8.8.8.8
 ENV LEGO_PATH /lego
 ENV LEGO_HOOKS_DIR $LEGO_PATH/hooks
 ENV LEGO_KEY_TYPE ec384
