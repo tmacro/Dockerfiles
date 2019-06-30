@@ -22,7 +22,6 @@ ENV LEGO_KEY_TYPE ec384
 ENV LEGO_RENEW_DAYS 30
 ENV LEGO_ACME_HOST "https://acme-v02.api.letsencrypt.org/directory"
 ENV	LEGO_ACME_STAGING_HOST "https://acme-staging-v02.api.letsencrypt.org/directory"
-ENV LEGO_STAGING TRUE
 
 RUN apk_add ca-certificates
 

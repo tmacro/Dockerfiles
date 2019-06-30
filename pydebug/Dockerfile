@@ -1,10 +1,10 @@
 FROM debian:latest
 
-ENV PY_VERSION 3.6.4
+ENV PY_VERSION 3.7.0
 
 ADD https://www.python.org/ftp/python/${PY_VERSION}/Python-${PY_VERSION}.tgz /tmp/Python-${PY_VERSION}.tar.gz
 
-RUN apt-get update &&  apt-get install -y build-essential valgrind zlib1g-dev libssl-dev
+RUN apt-get update &&  apt-get install -y build-essential valgrind zlib1g-dev libssl-dev libffi-dev
 RUN cd /tmp \
     && tar xvzf Python-${PY_VERSION}.tar.gz \
     && cd Python-${PY_VERSION} \

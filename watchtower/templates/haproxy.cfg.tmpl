@@ -45,31 +45,78 @@ frontend public
 	http-request redirect scheme https if is-http
 	{{ end }}
 
-	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }}	# Iter over containers
-	{{ with $value := index $containers 0}}						# Take first in group
-		{{ if $value.Env.WT_SUBDOMAIN }}
-			# ACL for subdomain based routing eg myservice.example.com
-			acl host_{{ $host }}_sub hdr_dom(host) -i {{ $host }}
-			# If so use the matching backend
-			use_backend bcknd_{{ $host }} if host_{{ $host }}_sub
-		{{ end }}
 
-		{{ if $value.Env.WT_URI }}
-			# ACL for path based routing eg example.com/myservice/
-			acl host_{{ $host }}_uri path_beg /{{ $host }}/
-			# If so use the matching backend
-			use_backend bcknd_{{ $host }} if host_{{ $host }}_uri
-		{{ end }}
-	{{ end }}
+	{{ with $containers := whereExist $ "Env.WT_ALIAS" }} # Grab everything with an alias
+
+	{{ range $group, $grouped_services := groupBy $containers "Env.WT_GROUP" }} # First we'll deal with groups so get them
+	{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}	# Iter over the aliases in the group
+	{{ with $host := index $hosts 0}}						# Take the first one
+
+	{{ if $host.Env.WT_SUBDOMAIN }} # Add our ACL for subdomain based routing if needed eg <alias>.<group>.example.com
+	acl host_{{ $group }}_{{ $alias }}_subdomain hdr_beg(host) -i {{ $group }}.{{ $alias }}.
+	use_backend bcknd_{{ $group }}_{{ $alias }} if host_{{ $group }}_{{ $alias }}_subdomain # Add our mapping
 	{{ end }}
 
-	{{ range $host, $containers := groupBy $ "Env.WT_ALIAS" }} 			# Iter over containers, group by Alias
-	backend bcknd_{{ $host }}											# Create our backend
-		{{ range $container := $containers }}							# Iter over group
-	{{ if and $container.Env.WT_ALIAS $container.Env.WT_PORT }}			# If the container defines a port
-	{{ with $network := $container.Networks | first }}					# Grab it and add the container as a server
-	server srv_{{printf "%.*s" 12 $container.ID}} {{ $network.IP }}:{{ $container.Env.WT_PORT }} check inter 2s rise 3 fall 2
+	{{ if $host.Env.WT_URI }} # Add our ACL for uri based routing eg example.com/<group/<alias>/
+	acl host_{{ $group }}_{{ $alias }}_uri path_beg /{{ $group }}/{{ $alias }}/
+	use_backend bcknd_{{ $group }}_{{ $alias }} if host_{{ $group }}_{{ $alias }}_uri # Add our mapping
+	{{ end }}
+
+	{{ end }} # End with $host
+	{{ end }} # End range $alias
+	{{ end }} # End range $group
+
+	{{ with $toplvl_services := whereNotExist $containers "Env.WT_GROUP" }} # Now grab everything without a group
+	{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}	# Iter over the aliases
+	{{ with $host := index $hosts 0}}						# Take the first one
+
+	{{ if $host.Env.WT_SUBDOMAIN }} # Add our ACL for subdomain based routing if needed eg <alias>.<group>.example.com
+	acl host_{{ $alias }}_subdomain hdr_beg(host) -i {{ $alias }}.
+	use_backend bcknd_{{ $alias }} if host_{{ $alias }}_subdomain # Add our mapping
+	{{ end }}
+
+	{{ if $host.Env.WT_URI }} # Add our ACL for uri based routing eg example.com/<group/<alias>/
+	acl host_{{ $alias }}_uri path_beg /{{ $alias }}/
+	use_backend bcknd_{{ $alias }} if host_{{ $alias }}_uri # Add our mapping
+	{{ end }}
+
+	{{ end }} # End with $host
+	{{ end }} # End range $alias
+	{{ end }} # End with $toplvl_services
+
+	{{ end }} # End with $containers
+
+
+	{{ with $containers := whereExist $ "Env.WT_ALIAS" }} # Grab everything with an alias
+
+	{{ range $group, $grouped_backends := groupBy $containers "Env.WT_GROUP" }} # First we'll deal with groups so get them
+	{{ range $alias, $backends := groupBy $grouped_backends "Env.WT_ALIAS" }}	# Iter over the aliases in the group
+backend bcknd_{{ $group }}_{{ $alias }}
+	{{ range $backend := $backends }}
+
+	{{ if $backend.Env.WT_PORT }} # If the container defines a port
+	{{ with $network := $backend.Networks | first }} # Grab it and add the container as a server
+	server srv_{{printf "%.*s" 12 $backend.ID}} {{ $network.IP }}:{{ $backend.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
 	{{ end }}
+
+	{{ end }} # End range $backend
+	{{ end }} # End range $alias
+	{{ end }} # End range $group
+
+	{{ with $toplvl_backends := whereNotExist $containers "Env.WT_GROUP" }} # Now grab everything without a group
+	{{ range $alias, $backends := groupBy $toplvl_backends "Env.WT_ALIAS" }}	# Iter over the aliases
+backend bcknd_{{ $alias }}
+	{{ range $backend := $backends }}
+
+	{{ if $backend.Env.WT_PORT }} # If the container defines a port
+	{{ with $network := $backend.Networks | first }} # Grab it and add the container as a server
+	server srv_{{printf "%.*s" 12 $backend.ID}} {{ $network.IP }}:{{ $backend.Env.WT_PORT }} check inter 2s rise 3 fall 2
 	{{ end }}
-{{ end }}
+	{{ end }}
+
+	{{ end }} # End range $backend
+	{{ end }} # End range $alias
+	{{ end }} # End with $toplvl_backends
+
+	{{ end }}
