@@ -1,6 +1,6 @@
 FROM golang:alpine as builder
 
-ENV LEGO_VERSION 2.6.0
+ENV LEGO_VERSION 3.3.0
 
 WORKDIR /go/src/github.com/go-acme/lego
 
@@ -8,8 +8,6 @@ RUN apk --update add git gawk make && \
 	git clone https://github.com/go-acme/lego.git . && \
 	git checkout tags/v${LEGO_VERSION} && \
 	make generate-dns build
-
-
 
 FROM tmacro/base:latest
 
@@ -32,4 +30,4 @@ RUN chmod +x /usr/bin/issue-certs /usr/bin/wait-grep && \
 
 COPY ./s6 /etc
 COPY crontab /var/spool/cron/crontabs/root
-# ENTRYPOINT /init
+CMD /init

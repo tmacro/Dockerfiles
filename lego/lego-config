@@ -8,6 +8,12 @@ if [ -z $LEGO_EMAIL ]; then
 	LEGO_EMAIL="$CLOUDFLARE_EMAIL"
 fi
 
+# Default to tls
+if [ -z $LEGO_CHALLENGES ]; then
+	echo "No acme challenges defined, defaulting to `tls`"
+	LEGO_CHALLENGES=tls
+fi
+
 # If LEGO_STAGING is non-empty use the staging api endpoint
 _server() {
 	local server='--server'
@@ -24,7 +30,7 @@ _domains() {
 	local domains=''
 	for i in ${LEGO_DOMAINS//,/ }
 	do
-		domains="$DOMAINS --domains=${i}"
+		domains="$domains --domains=${i}"
 	done
 	echo -n "$domains"
 }
@@ -36,7 +42,7 @@ _challenge_dns() {
 	fi
 	local challenge="--dns $LEGO_DNS_PROVIDER"
 	if [ -n "$LEGO_DNS_RESOLVER" ]; then
-		challenge="$challenge --dns.resolver $LEGO_DNS_RESOLVER"
+		challenge="$challenge --dns.resolvers $LEGO_DNS_RESOLVER"
 	fi
 	if [ -n "$LEGO_DNS_TIMEOUT" ]; then
 		challenge="$challenge --dns-timeout $LEGO_DNS_TIMEOUT"
@@ -68,7 +74,7 @@ _challenge_tls() {
 
 _challenges() {
 	local challenges=''
-	for i in ${LEGO_CHALLENGE//,/ }; do
+	for i in ${LEGO_CHALLENGES//,/ }; do
 		case $i in
 			dns)
 				challenges="$challenges $(_challenge_dns)"
@@ -87,40 +93,5 @@ _challenges() {
 	done
 	echo -n "$challenges"
 }
-
-if [ -z $LEGO_CHALLENGES ]; then
-	echo "You must define an acme challenge!!"
-	exit 1
-fi
-
-for i in ${LEGO_CHALLENGES//,/ }
-do
-case $i in
-	dns)
-		echo "Using dns challenge"
-		CHALLENGES="$CHALLENGES --dns=$LEGO_PROVIDER"
-		if [ -n "$LEGO_DNS_RESOLVERS" ]; then
-			CHALLENGES="$CHALLENGES --dns.resolvers=$LEGO_DNS_RESOLVERS"
-		fi
-		;;
-	http)
-		echo "Using http challenge"
-		CHALLENGES="$CHALLENGES --http"
-		if [ -n "$LEGO_HTTP_PORT" ]; then
-			CHALLENGES="$CHALLENGES --http.port=$LEGO_HTTP_PORT"
-		fi
-		;;
-	tls)
-		echo "Using tls challenge"
-		CHALLENGES="$CHALLENGES --tls"
-		if [ -n "$LEGO_TLS_PORT" ]; then
-			CHALLENGES="$CHALLENGES --tls.port=$LEGO_TLS_PORT"
-		fi
-		;;
-	*)
-		echo "Unknown challenge "
-esac
-done
-
 
 LEGO_ARGS="--email=$LEGO_EMAIL --accept-tos --pem --path=$LEGO_PATH --key-type=$LEGO_KEY_TYPE $(_challenges) $(_server) $(_domains)"
