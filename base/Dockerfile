@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.11.2
 MAINTAINER Taylor McKinnon <mail@tmacs.space>
 
 ENV S6_VERSION 1.22.1.0
