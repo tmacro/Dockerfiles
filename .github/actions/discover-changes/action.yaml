@@ -1,0 +1,15 @@
+name: Discover Changes
+description: Discover changed and updated docker images
+inputs:
+  force_build:
+    description: Build all images rather than just changed
+    required: false
+    default: false
+outputs:
+  changes:
+    description: images with file changes
+  updates:
+    description: images with updated dependencies
+runs:
+  using: 'node12'
+  main: 'index.js'

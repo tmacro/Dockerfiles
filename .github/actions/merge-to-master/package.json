@@ -1,0 +1,6 @@
+{
+  "name": "merge-to-master",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT"
+}

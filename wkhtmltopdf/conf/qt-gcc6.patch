@@ -25,10 +25,10 @@ index 7571efc1e9..77d4f5047f 100644
  } // namespace JSC
 
 diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/HashTable.h b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/HashTable.h
-index 42a9233000..b0584c1bf5 100644
+index 42a9233000..e761edb1fa 100644
 --- a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/HashTable.h
 +++ b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/HashTable.h
-@@ -257,16 +257,6 @@ namespace WTF {
+@@ -257,17 +257,6 @@ namespace WTF {
 
      using std::swap;
 
@@ -42,9 +42,10 @@ index 42a9233000..b0584c1bf5 100644
 -        swap(a.second, b.second);
 -    }
 -#endif
-
+-
      template<typename T, bool useSwap> struct Mover;
      template<typename T> struct Mover<T, true> { static void move(T& from, T& to) { swap(from, to); } };
+     template<typename T> struct Mover<T, false> { static void move(T& from, T& to) { to = from; } };
 diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TypeTraits.h b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TypeTraits.h
 index ede98e4f26..ce890876ee 100644
 --- a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TypeTraits.h
@@ -69,17 +70,3 @@ index 9cd3d123c1..917eac055a 100644
 -    return false;
 +    return nullptr;
  };
-
-
-diff --git a/src/plugins/accessible/widgets/itemviews.cpp b/src/plugins/accessible/widgets/itemviews.cpp
-index 14c9279dbe..dcfffa3ddb 100644
---- a/src/plugins/accessible/widgets/itemviews.cpp
-+++ b/src/plugins/accessible/widgets/itemviews.cpp
-@@ -393,7 +393,7 @@ bool QAccessibleTable2::unselectColumn(int column)
-     QModelIndex index = view()->model()->index(0, column, view()->rootIndex());
-     if (!index.isValid() || view()->selectionMode() & QAbstractItemView::NoSelection)
-         return false;
--    view()->selectionModel()->select(index, QItemSelectionModel::Columns & QItemSelectionModel::Deselect);
-+    view()->selectionModel()->select(index, static_cast<QItemSelectionModel::SelectionFlags>(QItemSelectionModel::Columns & QItemSelectionModel::Deselect));
-     return true;
- }
