@@ -59,7 +59,11 @@ class Graph {
         this._constraints[parent].push(child);
     }
 
-    add(parent, child = null) {
+    add_node(id) {
+        this._constraints[id] = [];
+    }
+
+    add_constraint(parent, child = null) {
         if (this._has_constraint(child, parent)) {
             throw Error(
                 `Circular Dependency: ${child} can not be a dependency of ${parent}!`
@@ -128,10 +132,10 @@ async function main() {
 
     const graph = new Graph();
     Object.values(images).forEach((i) => {
-        // graph.add(i.name);
+        graph.add_node(i.name);
         i.deps.forEach((d) => {
             console.log(d);
-            graph.add(i.name, d);
+            graph.add_constraint(i.name, d);
         });
     });
 
