@@ -1,3 +1,4 @@
 name: watchtower
+version: '0.0'
 deps:
   - base
