@@ -140,9 +140,10 @@ async function main() {
     });
 
     for (const stage of graph.stages) {
-        core.info(`Building images: ${stage.join(', ')}`);
+        const stage_images = stage.filter(to_build.includes)
+        core.info(`Building images: ${stage_images.join(', ')}`);
         await Promise.all(
-            stage.map((i) => build_image(images[i], docker_username))
+            stage_images.map((i) => build_image(images[i], docker_username))
         );
     }
 }
