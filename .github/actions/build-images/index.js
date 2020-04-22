@@ -140,7 +140,7 @@ async function main() {
     });
 
     for (const stage of graph.stages) {
-        const stage_images = stage.filter(to_build.includes)
+        const stage_images = stage.filter(i => to_build.includes(i))
         core.info(`Building images: ${stage_images.join(', ')}`);
         await Promise.all(
             stage_images.map((i) => build_image(images[i], docker_username))

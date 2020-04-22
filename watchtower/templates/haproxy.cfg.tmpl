@@ -1,12 +1,15 @@
-{{ $local := . }}
+{{ $root := . }}
 global
 	daemon
 	maxconn 4096
 	pidfile /var/run/haproxy.pid
 	tune.ssl.default-dh-param 4096
-	log 127.0.0.1	 local1 debug
+	log 127.0.0.1 local0 debug
 	ssl-default-bind-options force-tlsv12
 	ssl-default-bind-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+{{ if $root.Env.WT_ENABLE_AUTH }}
+	lua-load /etc/haproxy/lua/auth-request.lua
+{{ end }}
 
 defaults
 	log global
@@ -37,87 +40,251 @@ frontend public
 	option forwardfor						# Enable X-Forwarded-For
 	errorfile 503 /etc/haproxy/503.http 	# Setup 503 page
 
-    {{ if $local.Env.WT_HTTPS_ENABLED }}	# Bind to 443 if HTTPS is enabled
+	{{ if $root.Env.WT_HTTPS_ENABLED }}	# Bind to 443 if HTTPS is enabled
 	bind *:443 ssl crt /etc/haproxy/certs.d
 	{{ end }}
 
-	{{ if $local.Env.WT_HTTPS_REDIR }}		# Enable HTTP -> HTTP redirect if set
+	{{ if $root.Env.WT_HTTPS_REDIR }}		# Enable HTTP -> HTTP redirect if set
 	acl is-http      ssl_fc,not
 	http-request redirect scheme https if is-http
 	{{ end }}
 
-	{{ if $local.Env.WT_STRICT }}
-	acl has_domain hdr_dom(host) -m end .{{ $local.Env.WT_ROOT }}
+	{{ if $root.Env.WT_STRICT }}
+	acl has_domain hdr_dom(host) -m end .{{ $root.Env.WT_ROOT }}
 	http-request deny if !has_domain
 	{{ end }}
 
-{{ if gt (len $containers) 0 }}
+{{ define "service_name" }}
+{{ end }}
 
-	{{ range $group, $grouped_services := groupBy $containers "Env.WT_GROUP" }} {{/* First we'll deal with groups so get them */}}
-	{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}	{{/* Iter over the aliases in the group */}}
-	{{ with $host := index $hosts 0}}						{{/* Take the first one */}}
+{{ define "backend_name" }}
+{{ end }}
 
-	{{ if $host.Env.WT_SUBDOMAIN }} {{/* Add our ACL for subdomain based routing if needed eg <alias>.<group>.example.com */}}
-	acl host_{{ $group }}_{{ $alias }}_subdomain hdr_dom(host) -i -m str {{ $alias }}.{{ $group }}.{{ $local.Env.WT_ROOT }}
-	use_backend bcknd_{{ $group }}_{{ $alias }} if host_{{ $group }}_{{ $alias }}_subdomain {{/* Add our mapping */}}
-	{{ end }}
+{{ define "acl.header" }}{{/*--------------------------------------------------------*/}}
+	acl {{ $.name }}_service_header req.hdr(X-Watchtower-Service) -m str {{ $.value }}
+{{ end }}
 
-	{{ if $host.Env.WT_URI }} {{/* Add our ACL for uri based routing eg example.com/<group/<alias>/ */}}
-	acl host_{{ $group }}_{{ $alias }}_uri path_beg /{{ $group }}/{{ $alias }}/
-	use_backend bcknd_{{ $group }}_{{ $alias }} if host_{{ $group }}_{{ $alias }}_uri {{/* Add our mapping */}}
-	{{ end }}
+{{ define "acl.subdomain" }}{{/*--------------------------------------------------------*/}}
+	acl {{ $.name }}_subdomain hdr_dom(host) -i -m str {{ $.url }}
+{{ end }}
 
-	{{ end }} {{/* End with $host */}}
-	{{ end }} {{/* End range $alias */}}
-	{{ end }} {{/* End range $group */}}
+{{ define "acl.uri" }}{{/*--------------------------------------------------------*/}}
+	acl {{ $.name }}_uri path_beg {{ $.path }}
+{{ end }}
 
-	{{ with $toplvl_services := whereNotExist $containers "Env.WT_GROUP" }} {{/* Now grab everything without a group */}}
-	{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}	{{/* Iter over the aliases */}}
-	{{ with $host := index $hosts 0}}						{{/* Take the first one */}}
+{{ define "service_acls" }}{{/*--------------------------------------------------------*/}}
+{{ if $.header }}
+{{ template "acl.header" (dict "name" $.name "value" $.name) }}
+{{ end }} {{/*if*/}}
+{{ if $.subdomain }}
+{{ if $.group }}
+{{ $url := printf "%s.%s.%s"  $.alias $.group $.root }}
+{{ template "acl.subdomain" (dict "name" $.name "url" $url) }}
+{{ else }}
+{{ $url := printf "%s.%s"  $.alias $.root }}
+{{ template "acl.subdomain" (dict "name" $.name "url" $url) }}
+{{ end }} {{/*if*/}}
+{{ end }} {{/*if*/}}
+{{ if $.uri }}
+{{ if $.group }}
+{{ $path := printf "/%s/%s/" $.group $.alias}}
+{{ template "acl.uri" (dict "name" $.name "path" $path)}}
+{{ else }}
+{{ $path := printf "/%s/" $.alias}}
+{{ template "acl.uri" (dict "name" $.name "path" $path)}}
+{{ end }} {{/*if*/}}
+{{ end }} {{/*if*/}}
+{{ end }} {{/*define*/}}
 
-	{{ if $host.Env.WT_SUBDOMAIN }} {{/* Add our ACL for subdomain based routing if needed eg <alias>.<group>.example.com */}}
-	acl host_{{ $alias }}_subdomain hdr_dom(host) -i -m str {{ $alias }}.{{ $local.Env.WT_ROOT }}
-	use_backend bcknd_{{ $alias }} if host_{{ $alias }}_subdomain {{/* Add our mapping */}}
-	{{ end }}
+{{ define "use_backend" }}{{/*--------------------------------------------------------*/}}
+	use_backend {{ $.backend }} if {{ $.acl }}
+{{ end }}
 
-	{{ if $host.Env.WT_URI }} {{/* Add our ACL for uri based routing eg example.com/<group/<alias>/ */}}
-	acl host_{{ $alias }}_uri path_beg /{{ $alias }}/
-	use_backend bcknd_{{ $alias }} if host_{{ $alias }}_uri {{/* Add our mapping */}}
-	{{ end }}
+{{ define "service_use_backend" }}{{/*--------------------------------------------------------*/}}
+{{ $backend := ""}}
+{{ if $.header }}
+	use_backend {{ $.name }} if {{ $.name }}_service_header
+{{ end }} {{/*if*/}}
+{{ if $.subdomain }}
+	use_backend {{ $.name }} if {{ $.name }}_subdomain
+{{ end }} {{/*if*/}}
+{{ if $.uri }}
+	use_backend {{ $.name }} if {{ $.name }}_uri
+{{ end }} {{/*if*/}}
+{{ end }}
 
-	{{ end }} {{/* End with $host */}}
-	{{ end }} {{/* End range $alias */}}
-	{{ end }} {{/* End with $toplvl_services */}}
+{{ define "services.grouped.acls" }}{{/*--------------------------------------------------------*/}}
+{{ range $group, $grouped_services := groupBy $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}
+{{ with $host := index $hosts 0}}
 
-	{{ range $group, $grouped_backends := groupBy $containers "Env.WT_GROUP" }} {{/* First we'll deal with groups so get them */}}
-	{{ range $alias, $backends := groupBy $grouped_backends "Env.WT_ALIAS" }}	{{/* Iter over the aliases in the group */}}
-backend bcknd_{{ $group }}_{{ $alias }}
-	{{ range $backend := $backends }}
+{{ $service_name := printf "srv_%s_%s" $group $alias }}
+{{ $service := dict "name" $service_name "header" "true" "group" $group "alias" $alias "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI "root" $.root }}
+{{ template "service_acls" $service }}
+{{ end }} {{/*with*/}}
 
-	{{ if $backend.Env.WT_PORT }} {{/* If the container defines a port */}}
-	{{ with $network := $backend.Networks | first }} {{/* Grab it and add the container as a server */}}
+{{ end }} {{/*range*/}}
+{{ end }} {{/*range*/}}
+{{ end }} {{/*define*/}}
+
+{{ define "services.toplevel.acls" }}{{/*--------------------------------------------------------*/}}
+{{ with $toplvl_services := whereNotExist $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}
+
+{{ with $host := index $hosts 0}}
+{{ $service_name := printf "srv_%s" $alias }}
+{{ $service := dict "name" $service_name "header" "true" "group" "" "alias" $alias "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI "root" $.root }}
+{{ template "service_acls" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*with*/}}
+{{ end }} {{/*define*/}}
+
+{{ define "services.auth.acls" }}{{/*--------------------------------------------------------*/}}
+{{ with $toplvl_services := whereNotExist $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}
+
+{{ with $host := index $hosts 0}}
+{{ $service := dict "name" "auth_service" "header" "" "group" "" "alias" $alias "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI "root" $.root }}
+{{ template "service_acls" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*with*/}}
+
+{{ range $group, $grouped_services := groupBy $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}
+{{ with $host := index $hosts 0}}
+
+{{ $service := dict "name" "auth_service" "header" "" "group" $group "alias" $alias "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI "root" $.root }}
+{{ template "service_acls" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*range*/}}
+{{ end }} {{/*define*/}}
+
+{{ define "services.grouped.use" }}{{/*--------------------------------------------------------*/}}
+{{ range $group, $grouped_services := groupBy $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}
+{{ with $host := index $hosts 0}}
+
+{{ $service_name := printf "srv_%s_%s" $group $alias }}
+{{ $service := dict "name" $service_name "header" "true" "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI }}
+{{ template "service_use_backend" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*range*/}}
+{{ end }}
+
+{{ define "services.toplevel.use" }}{{/*--------------------------------------------------------*/}}
+{{ with $toplvl_services := whereNotExist $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}
+
+{{ with $host := index $hosts 0}}
+{{ $service_name := printf "srv_%s" $alias }}
+{{ $service := dict "name" $service_name "header" "true" "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI }}
+{{ template "service_use_backend" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*with*/}}
+{{ end }}
+
+{{ define "services.auth.use" }}{{/*--------------------------------------------------------*/}}
+{{ with $toplvl_services := whereNotExist $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $toplvl_services "Env.WT_ALIAS" }}
+
+{{ with $host := index $hosts 0}}
+{{ $service := dict "name" "auth_service" "header" "" "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI }}
+{{ template "service_use_backend" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*with*/}}
+
+{{ range $group, $grouped_services := groupBy $.hosts "Env.WT_GROUP" }}
+{{ range $alias, $hosts := groupBy $grouped_services "Env.WT_ALIAS" }}
+{{ with $host := index $hosts 0}}
+
+{{ $service := dict "name" "auth_service" "header" "" "subdomain" $host.Env.WT_SUBDOMAIN "uri" $host.Env.WT_URI }}
+{{ template "service_use_backend" $service }}
+{{ end }} {{/*with*/}}
+
+{{ end }} {{/*range*/}}
+{{ end }} {{/*range*/}}
+{{ end }}
+
+{{ $all_services := whereExist $root "Env.WT_ALIAS" }}
+{{ $auth_backends := whereExist $all_services "Env.WT_AUTH_BACKEND" }}
+{{ $service_backends := whereNotExist $all_services "Env.WT_AUTH_BACKEND" }}
+{{ $toplevel_services := whereNotExist $service_backends "Env.WT_GROUP"}}
+{{ $grouped_services := whereExist $service_backends "Env.WT_GROUP"}}
+
+{{ template "services.toplevel.acls" (dict "hosts" $toplevel_services "root" $root.Env.WT_ROOT) }}
+{{ template "services.grouped.acls" (dict "hosts" $grouped_services "root" $root.Env.WT_ROOT) }}
+{{ template "services.auth.acls" (dict "hosts" $auth_backends "root" $root.Env.WT_ROOT) }}
+
+{{ template "services.toplevel.use" (dict "hosts" $toplevel_services) }}
+{{ template "services.grouped.use" (dict "hosts" $grouped_services) }}
+{{ template "services.auth.use" (dict "hosts" $auth_backends) }}
+
+
+backend auth_service
+{{ range $backend := $auth_backends }}
+{{ with $network := $backend.Networks | first }} {{/* Grab it and add the container as a server */}}
 	server srv_{{printf "%.*s" 12 $backend.ID}} {{ $network.IP }}:{{ $backend.Env.WT_PORT }} check inter 2s rise 3 fall 2
-	{{ end }}
-	{{ end }}
+{{ end }}
+{{ end }}
 
-	{{ end }} {{/* End range $backend */}}
-	{{ end }} {{/* End range $alias */}}
-	{{ end }} {{/* End range $group */}}
+{{ range $group, $grouped_backends := groupBy $service_backends "Env.WT_GROUP" }} {{/* First we'll deal with groups so get them */}}
+{{ range $alias, $backends := groupBy $grouped_backends "Env.WT_ALIAS" }}	{{/* Iter over the aliases in the group */}}
+backend srv_{{ $group }}_{{ $alias }}
+	
+{{ with $host := index $backends 0}}						{{/* Take the first one */}}
+{{ if and (not $host.Env.WT_NO_AUTH) $root.Env.WT_ENABLE_AUTH }}
+	http-request set-header X-Real-IP %[src]
+	http-request lua.auth-request auth_service /oauth2/auth
+	http-request redirect location {{ $root.Env.WT_AUTH_URI }}/oauth2/start?rd=http://%[req.hdr(Host)]%[path] if !{ ssl_fc } !{ var(txn.auth_response_successful) -m bool } 
+	http-request redirect location {{ $root.Env.WT_AUTH_URI }}/oauth2/start?rd=https://%[req.hdr(Host)]%[path] if !{ var(txn.auth_response_successful) -m bool }
+{{ end }}
+{{ end }}
 
-	{{ with $toplvl_backends := whereNotExist $containers "Env.WT_GROUP" }} {{/* Now grab everything without a group */}}
-	{{ range $alias, $backends := groupBy $toplvl_backends "Env.WT_ALIAS" }}	{{/* Iter over the aliases */}}
-backend bcknd_{{ $alias }}
-	{{ range $backend := $backends }}
-
-	{{ if $backend.Env.WT_PORT }} {{/* If the container defines a port */}}
-	{{ with $network := $backend.Networks | first }} {{/* Grab it and add the container as a server */}}
+{{ range $backend := $backends }}
+{{ if $backend.Env.WT_PORT }} {{/* If the container defines a port */}}
+{{ with $network := $backend.Networks | first }} {{/* Grab it and add the container as a server */}}
 	server srv_{{printf "%.*s" 12 $backend.ID}} {{ $network.IP }}:{{ $backend.Env.WT_PORT }} check inter 2s rise 3 fall 2
-	{{ end }}
-	{{ end }}
+{{ end }}
+{{ end }}
+{{ end }} {{/* End range $backend */}}
 
-	{{ end }} {{/* End range $backend */}}
-	{{ end }} {{/* End range $alias */}}
-	{{ end }} {{/* End with $toplvl_backends */}}
+{{ end }} {{/* End range $alias */}}
+{{ end }} {{/* End range $group */}}
 
-{{ end }} {{/* End if $containers */}}
-{{ end }} {{/* End with $containers */}}
+{{ with $toplvl_backends := whereNotExist $service_backends "Env.WT_GROUP" }} {{/* Now grab everything without a group */}}
+{{ range $alias, $backends := groupBy $toplvl_backends "Env.WT_ALIAS" }}	{{/* Iter over the aliases */}}
+backend srv_{{ $alias }}
+
+{{ with $host := index $backends 0}}						{{/* Take the first one */}}
+{{ if and (not $host.Env.WT_NO_AUTH) $root.Env.WT_ENABLE_AUTH }}
+	http-request set-header X-Real-IP %[src]
+	http-request set-header X-Watchtower-Service _{{ $alias }}
+	http-request lua.auth-request auth_service /oauth2/auth
+	http-request redirect location {{ $root.Env.WT_AUTH_URI }}/oauth2/start?rd=http://%[req.hdr(Host)]%[path] if !{ ssl_fc } !{ var(txn.auth_response_successful) -m bool } 
+	http-request redirect location {{ $root.Env.WT_AUTH_URI }}/oauth2/start?rd=https://%[req.hdr(Host)]%[path] if !{ var(txn.auth_response_successful) -m bool }
+{{ end }}
+{{ end }}
+
+{{ range $backend := $backends }}
+{{ if $backend.Env.WT_PORT }} {{/* If the container defines a port */}}
+{{ with $network := $backend.Networks | first }} {{/* Grab it and add the container as a server */}}
+	server srv_{{printf "%.*s" 12 $backend.ID}} {{ $network.IP }}:{{ $backend.Env.WT_PORT }} check inter 2s rise 3 fall 2
+{{ end }}
+{{ end }}
+{{ end }} {{/* End range $backend */}}
+
+{{ end }} {{/* End range $alias */}}
+{{ end }} {{/* End with $toplvl_backends */}}
+
