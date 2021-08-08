@@ -107,14 +107,16 @@ async function add_tags(repo, image, ref, tag) {
     await tag_image(repo, image, ref);
     if (tag) {
         await tag_image(repo, image, tag);
-    } else {
-        await remove_latest_tag(repo, image);
     }
 }
 
-async function publish_tags(repo, image) {
+async function publish_tags(repo, image, ref, tag) {
     core.debug(`Publishing image ${repo}/${image}`);
-    await push_image(repo, image);
+    await push_image(repo, image, ref);
+    if (tag) {
+        await push_image(repo, image, tag);
+        await push_image(repo, image, 'latest');
+    }
 }
 
 async function main() {
