@@ -99,6 +99,13 @@ async function get_changed_images() {
     });
 }
 
+async function get_tagged_images() {
+    const tags = await get_git_tags();
+    return Object.keys(tags)
+    .map(i => Path.resolve(`${work_dir}/${i}`))
+    .filter(i => fs.existsSync(`${i}/Dockerfile`));
+}
+
 async function main() {
     const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
