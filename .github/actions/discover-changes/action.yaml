@@ -8,8 +8,6 @@ inputs:
 outputs:
   changes:
     description: images with file changes
-  updates:
-    description: images with updated dependencies
 runs:
   using: 'node12'
   main: 'index.js'

@@ -17,27 +17,27 @@ jobs:
       - name: Discover Changes
         id: discover
         uses: ./.github/actions/discover-changes
-      - name: Bump Versions
-        id: bump
-        uses: ./.github/actions/bump-versions
-        with:
-          changes: ${{ steps.discover.outputs.changes }}
-          updates: ${{ steps.discover.outputs.updates }}
-      - name: Build Images
-        id: build
-        uses: ./.github/actions/build-images
-        with:
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          changes: ${{ steps.discover.outputs.changes }}
-          updates: ${{ steps.discover.outputs.updates }}
-      - name: Publish Images
-        id: publish
-        uses: ./.github/actions/publish-images
-        with:
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_token: ${{ secrets.DOCKER_TOKEN }}
-          changes: ${{ steps.discover.outputs.changes }}
-          updates: ${{ steps.discover.outputs.updates }}
+      # - name: Bump Versions
+      #   id: bump
+      #   uses: ./.github/actions/bump-versions
+      #   with:
+      #     changes: ${{ steps.discover.outputs.changes }}
+      #     updates: ${{ steps.discover.outputs.updates }}
+      # - name: Build Images
+      #   id: build
+      #   uses: ./.github/actions/build-images
+      #   with:
+      #     docker_username: ${{ secrets.DOCKER_USERNAME }}
+      #     changes: ${{ steps.discover.outputs.changes }}
+      #     updates: ${{ steps.discover.outputs.updates }}
+      # - name: Publish Images
+      #   id: publish
+      #   uses: ./.github/actions/publish-images
+      #   with:
+      #     docker_username: ${{ secrets.DOCKER_USERNAME }}
+      #     docker_token: ${{ secrets.DOCKER_TOKEN }}
+      #     changes: ${{ steps.discover.outputs.changes }}
+      #     updates: ${{ steps.discover.outputs.updates }}
       # - name: discover
       #   uses: ./.github/actions/discover-changed
       #   id: discover
@@ -55,6 +55,6 @@ jobs:
       #     build_status: ${{ steps.build.outputs.results }}
           # docker_username: ${{ secrets.DOCKER_USERNAME }}
           # docker_token: ${{ secrets.DOCKER_TOKEN }}
-          
+
 
 
