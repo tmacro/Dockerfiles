@@ -102,9 +102,6 @@ async function get_changed_images() {
 async function main() {
     const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
-    updates.map((i) =>
-        core.info(`Detected update in dependency of image ${i}`)
-    );
     core.setOutput('changes', JSON.stringify(changes));
 }
 
