@@ -110,7 +110,7 @@ async function main() {
     const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
 
-    const tagged = get_tagged_images();
+    const tagged = await get_tagged_images();
     tagged.forEach(i => console.debug(`Detected new tag for image ${i}`));
 
     const unique = [...new Set([...changes, ...tagged])];
