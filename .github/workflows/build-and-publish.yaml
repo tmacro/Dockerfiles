@@ -5,24 +5,15 @@ on:
 
 jobs:
   build_and_publish:
-    name: Build, Publish, and Merge
+    name: Build and Publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      # - name: Load Images
-      #   id: load
-      #   uses: ./.github/actions/load-images
       - name: Discover Changes
         id: discover
         uses: ./.github/actions/discover-changes
-      # - name: Bump Versions
-      #   id: bump
-      #   uses: ./.github/actions/bump-versions
-      #   with:
-      #     changes: ${{ steps.discover.outputs.changes }}
-      #     updates: ${{ steps.discover.outputs.updates }}
       - name: Build Images
         id: build
         uses: ./.github/actions/build-images
@@ -36,23 +27,3 @@ jobs:
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_token: ${{ secrets.DOCKER_TOKEN }}
           images: ${{ steps.build.outputs.images }}
-      # - name: discover
-      #   uses: ./.github/actions/discover-changed
-      #   id: discover
-      # - name: build
-      #   id: build
-      #   uses: ./.github/actions/build-images
-        # with:
-        #   changed: ${{ steps.discover.outputs.changed }}
-        #   images: ${{ steps.discover.outputs.images }}
-      # - name: tag-and-release
-      #   uses: ./.github/actions/tag-and-release
-      #   with:
-      #     changed: ${{ steps.discover.outputs.changed }}
-      #     images: ${{ steps.discover.outputs.images }}
-      #     build_status: ${{ steps.build.outputs.results }}
-          # docker_username: ${{ secrets.DOCKER_USERNAME }}
-          # docker_token: ${{ secrets.DOCKER_TOKEN }}
-
-
-

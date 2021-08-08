@@ -1,4 +1,4 @@
-const { core, run, exec, work_dir, short_ref, get_git_tags } = require('../utils');
+const { core, run, exec, short_ref, get_git_tags } = require('../utils');
 
 async function docker_login(user, token) {
     core.debug(`Authoring docker user ${user}`);
@@ -38,7 +38,7 @@ async function remove_latest_tag(repo, image) {
 }
 
 async function push_image(repo, image, tag) {
-    core.debug(`Pushing image ${repo}/${image}:${tag}`);
+    core.info(`Pushing image ${repo}/${image}:${tag}`);
     const ret_code = await exec.exec('docker', [
         'push',
         `${repo}/${image}:${tag}`
@@ -70,10 +70,13 @@ async function main() {
     const docker_token = core.getInput('docker_token');
     const to_publish = JSON.parse(core.getInput('images'));
 
+    if (!to_publish.length) {
+        core.info(`Nothing to publish.`);
+        return;
+    }
+
     await docker_login(docker_username, docker_token);
     const git_tags = await get_git_tags();
-    // const git_ref = await get_git_ref()
-    // const short_ref = git_ref.slice(0, 7);
     await Promise.all(to_publish.map(image => add_tags(docker_username, image, short_ref, git_tags[image])));
     await Promise.all(to_publish.map(image => publish_tags(docker_username, image, short_ref, git_tags[image])));
 }
