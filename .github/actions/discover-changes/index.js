@@ -1,6 +1,7 @@
 const Path = require('path');
+const fs = require('fs');
 
-const { core, exec, work_dir, run, get_images } = require('../utils');
+const { core, exec, work_dir, run, get_git_tags } = require('../utils');
 
 async function get_changes_for_commit(ref) {
     const paths = [];
@@ -79,7 +80,7 @@ async function get_latest_changes() {
     return changes;
 }
 
-async function get_changed_images(images) {
+async function get_changed_images() {
     const changes = await get_latest_changes();
     const changed_directories = changes.reduce((cds, path) => {
         const root_dir = Path.resolve(`${work_dir}/${path.split('/')[0]}`);
@@ -89,43 +90,38 @@ async function get_changed_images(images) {
         return cds;
     }, []);
     changed_directories.map((p) => core.debug(`Detected changes in ${p}`));
-    images.map((i) => core.debug(i._dir));
-    return images
-        .filter((i) => changed_directories.includes(i._dir))
-        .map((i) => i._name);
+    return changed_directories.filter(cd => {
+        if (fs.existsSync(`${cd}/Dockerfile`)) {
+            return true;
+        }
+        core.debug(`No Dockerfile found in ${cd}`);
+        return false;
+    });
 }
 
-async function get_updated_images(images, changed) {
-    let updated = [];
-    let unchanged_images = images.filter((i) => !changed.includes(i._name));
-    core.debug(JSON.stringify(changed));
-    core.debug(JSON.stringify(unchanged_images));
-    while (true) {
-        let new_updated = unchanged_images
-            .filter((i) => !updated.includes(i._name))
-            .filter((i) =>
-                i.deps.some((d) => changed.includes(d) || updated.includes(d))
-            )
-            .map((i) => i._name);
-        core.debug(`Updated ${JSON.stringify(new_updated)}`);
-        if (!new_updated.length) {
-            break;
-        }
-        updated = updated.concat(new_updated);
-    }
-    return updated;
+async function get_tagged_images() {
+    const tags = await get_git_tags();
+    return Object.keys(tags)
+    .map(i => Path.resolve(`${work_dir}/${i}`))
+    .filter(i => fs.existsSync(`${i}/Dockerfile`));
 }
 
 async function main() {
-    const images = await get_images();
-    const changes = await get_changed_images(images);
-    const updates = await get_updated_images(images, changes);
+    const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
-    updates.map((i) =>
-        core.info(`Detected update in dependency of image ${i}`)
-    );
-    core.setOutput('changes', JSON.stringify(changes));
-    core.setOutput('updates', JSON.stringify(updates));
+    if (!changes.length) {
+        core.info('No changes found');
+    }
+
+    const tagged = await get_tagged_images();
+    tagged.forEach(i => console.debug(`Detected new tag for image ${i}`));
+
+    if (!tagged.length) {
+        core.info('No tags found');
+    }
+
+    const unique = [...new Set([...changes, ...tagged])];
+    core.setOutput('changes', JSON.stringify(unique));
 }
 
 run(main);

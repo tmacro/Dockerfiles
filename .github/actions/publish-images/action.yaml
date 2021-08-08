@@ -1,10 +1,8 @@
 name: Publish Images
 description: Publish built images based on definitions
 inputs:
-  changes:
+  images:
     description: images with file changes
-  updates:
-    description: images with updated dependencies
   docker_username:
     description: Docker username
   docker_token:

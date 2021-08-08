@@ -1,4 +1,4 @@
-const { core, run, exec, load_and_hydrate_image } = require('../utils');
+const { core, run, exec, short_ref, get_git_tags } = require('../utils');
 
 async function docker_login(user, token) {
     core.debug(`Authoring docker user ${user}`);
@@ -15,56 +15,70 @@ async function docker_login(user, token) {
 }
 
 async function tag_image(repo, image, tag) {
-    core.debug(`Tagging image ${repo}/${image} with ${tag}`);
+    core.debug(`Tagging ${repo}/${image} with ${tag}`);
     const ret_code = await exec.exec('docker', [
         'tag',
         `${repo}/${image}`,
         `${repo}/${image}:${tag}`,
     ]);
     if (ret_code !== 0) {
-        throw Error(`Failed to tag image ${repo}/${image} with ${tag}`);
+        throw Error(`Failed to tag ${repo}/${image} with ${tag}`);
     }
 }
 
-
-async function push_image(repo, image, tag = null) {
-    const _tag = !!tag ? `:${tag}` : '';
-    core.debug(`Pushing image ${repo}/${image}${_tag}`);
+async function remove_latest_tag(repo, image) {
+    core.debug(`Removing latest tag from ${repo}/${image}`);
     const ret_code = await exec.exec('docker', [
-        'push',
-        `${repo}/${image}${_tag}`
+        'rmi',
+        `${repo}/${image}:latest`,
     ]);
     if (ret_code !== 0) {
-        throw Error(`Failed to push image ${repo}/${image}${_tag}`);
+        throw Error(`Failed to remove tag ${repo}/${image}:latest`);
     }
 }
 
-async function add_tags(repo, image) {
-    core.debug(`Adding tags to image ${image.name}`);
-    if (image.tag_version) {
-        await tag_image(repo, image.name, image.version);
+async function push_image(repo, image, tag) {
+    core.info(`Pushing image ${repo}/${image}:${tag}`);
+    const ret_code = await exec.exec('docker', [
+        'push',
+        `${repo}/${image}:${tag}`
+    ]);
+    if (ret_code !== 0) {
+        throw Error(`Failed to push image ${repo}/${image}`);
     }
 }
 
-async function publish_tags(repo, image) {
-    core.debug(`Pushing image ${image.name}`);
-    const tag = image.tag_latest ? null : image.version;
-    await push_image(repo, image.name, tag);
+async function add_tags(repo, image, ref, tag) {
+    core.debug(`Adding tags to image ${image}`);
+    await tag_image(repo, image, ref);
+    if (tag) {
+        await tag_image(repo, image, tag);
+    }
+}
+
+async function publish_tags(repo, image, ref, tag) {
+    core.debug(`Publishing image ${repo}/${image}`);
+    await push_image(repo, image, ref);
+    if (tag) {
+        await push_image(repo, image, tag);
+        await push_image(repo, image, 'latest');
+    }
 }
 
 async function main() {
     const docker_username = core.getInput('docker_username');
     const docker_token = core.getInput('docker_token');
-    const changes = JSON.parse(core.getInput('changes'));
-    const updates = JSON.parse(core.getInput('updates'));
+    const to_publish = JSON.parse(core.getInput('images'));
 
-    const to_publish = [...changes, ...updates];
-    const images = await Promise.all(to_publish.map(load_and_hydrate_image));
+    if (!to_publish.length) {
+        core.info(`Nothing to publish.`);
+        return;
+    }
 
     await docker_login(docker_username, docker_token);
-    await Promise.all(images.map(image => add_tags(docker_username, image)));
-    await Promise.all(images.map(image => publish_tags(docker_username, image)));
-
+    const git_tags = await get_git_tags();
+    await Promise.all(to_publish.map(image => add_tags(docker_username, image, short_ref, git_tags[image])));
+    await Promise.all(to_publish.map(image => publish_tags(docker_username, image, short_ref, git_tags[image])));
 }
 
 run(main);
