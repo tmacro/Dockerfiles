@@ -80,7 +80,7 @@ async function get_latest_changes() {
     return changes;
 }
 
-async function get_changed_images(images) {
+async function get_changed_images() {
     const changes = await get_latest_changes();
     const changed_directories = changes.reduce((cds, path) => {
         const root_dir = Path.resolve(`${work_dir}/${path.split('/')[0]}`);
@@ -100,7 +100,7 @@ async function get_changed_images(images) {
 }
 
 async function main() {
-    const changes = await get_changed_images(images);
+    const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
     updates.map((i) =>
         core.info(`Detected update in dependency of image ${i}`)
