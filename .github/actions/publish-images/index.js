@@ -1,4 +1,4 @@
-const { core, run, exec } = require('../utils');
+const { core, run, exec, work_dir } = require('../utils');
 
 async function docker_login(user, token) {
     core.debug(`Authoring docker user ${user}`);
