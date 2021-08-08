@@ -10,6 +10,8 @@ const constants = require('./constants');
 
 // Get the working directory
 const work_dir = process.env.GITHUB_WORKSPACE;
+const git_ref = process.env.GITHUB_SHA;
+const short_ref = git_ref.slice(0, 7);
 
 if (!work_dir) {
     core.setFailed('Unable to locate workspace!');
@@ -84,6 +86,8 @@ module.exports = {
     yaml,
     run,
     work_dir,
+    git_ref,
+    short_ref,
     load_image,
     hydrate_image,
     load_and_hydrate_image,
