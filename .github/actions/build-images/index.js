@@ -1,5 +1,5 @@
 const { core, run, exec, load_and_hydrate_image } = require('../utils');
-
+const Path = require('path');
 class Node {
     constructor(name) {
         this.name = name;
@@ -105,47 +105,30 @@ class Graph {
     }
 }
 
-async function build_image(image, repo) {
-    core.debug(`Building image ${repo}/${image.name}`);
+async function build_image(repo, name, image_path) {
+    core.debug(`Building image ${repo}/${name}`);
     const ret_code = await exec.exec('docker', [
         'build',
         '--tag',
-        `${repo}/${image.name}`,
-        image._dir,
+        `${repo}/${name}`,
+        image_path,
     ]);
-    if (ret_code !== 0) {
-        throw Error(`Failed to build image ${image.name}`);
-    }
+
+    return {
+        name,
+        success: ret_code === 0,
+    };
 }
 
 async function main() {
     const docker_username = core.getInput('docker_username');
-    const changes = JSON.parse(core.getInput('changes'));
-    const updates = JSON.parse(core.getInput('updates'));
-    const to_build = [...changes, ...updates];
+    const to_build = JSON.parse(core.getInput('changes'));
     // const to_build = ['base', 'lego', 'base-python'];
-    const _images = await Promise.all(to_build.map(load_and_hydrate_image));
-    const images = _images.reduce((imgs, i) => {
-        imgs[i.name] = i;
-        return imgs;
-    }, {});
 
-    const graph = new Graph();
-    Object.values(images).forEach((i) => {
-        graph.add_node(i.name);
-        i.deps.forEach((d) => {
-            console.log(d);
-            graph.add_constraint(i.name, d);
-        });
-    });
-
-    for (const stage of graph.stages) {
-        const stage_images = stage.filter(i => to_build.includes(i))
-        core.info(`Building images: ${stage_images.join(', ')}`);
-        await Promise.all(
-            stage_images.map((i) => build_image(images[i], docker_username))
-        );
-    }
+    const builds = await Promise.all(to_build.map(path => build_image(docker_username, Path.basename(path), path)));
+    builds.forEach(b => core.debug(`Built ${b.name} : ${b.success}`));
+    const images = builds.filter(b => b.success).map(b => b.name);
+    core.setOutput('images', JSON.stringify(images));
 }
 
 run(main);

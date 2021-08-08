@@ -23,13 +23,12 @@ jobs:
       #   with:
       #     changes: ${{ steps.discover.outputs.changes }}
       #     updates: ${{ steps.discover.outputs.updates }}
-      # - name: Build Images
-      #   id: build
-      #   uses: ./.github/actions/build-images
-      #   with:
-      #     docker_username: ${{ secrets.DOCKER_USERNAME }}
-      #     changes: ${{ steps.discover.outputs.changes }}
-      #     updates: ${{ steps.discover.outputs.updates }}
+      - name: Build Images
+        id: build
+        uses: ./.github/actions/build-images
+        with:
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          changes: ${{ steps.discover.outputs.changes }}
       # - name: Publish Images
       #   id: publish
       #   uses: ./.github/actions/publish-images

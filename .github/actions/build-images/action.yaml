@@ -3,10 +3,11 @@ description: Build images based on image definitions
 inputs:
   changes:
     description: images with file changes
-  updates:
-    description: images with updated dependencies
   docker_username:
     description: Docker username
+outputs:
+  images:
+    description: Successfully built images.
 runs:
   using: 'node12'
   main: 'index.js'
