@@ -1,0 +1,10 @@
+{
+  "name": "promhealth",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "bent": "^7.3.12",
+    "prom-client": "^13.1.0"
+  }
+}
