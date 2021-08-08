@@ -1,4 +1,4 @@
-const { core, run, exec, work_dir, short_ref } = require('../utils');
+const { core, run, exec, work_dir, short_ref, get_git_tags } = require('../utils');
 
 async function docker_login(user, token) {
     core.debug(`Authoring docker user ${user}`);
