@@ -9,7 +9,7 @@ const expectedCode = parseInt(process.env.TARGET_CODE || '200');
 
 const checkHealth = bent(targetURL, targetMethod, 'string');
 
-const healthGauge = new client.Gauge({
+new client.Gauge({
   name: 'up',
   help: 'Did the healthcheck pass. Binary 0/1',
   async collect() {
@@ -38,4 +38,4 @@ createServer((req, res) => {
         res.statusCode = 404;
         res.end("Page not found!");
   }
-}).listen(3000);
+}).listen(parseInt(process.env.EXPORTER_PORT));
