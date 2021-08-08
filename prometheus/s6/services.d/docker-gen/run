@@ -1,0 +1,4 @@
+#!/usr/bin/execlineb -P
+/bin/docker-gen -watch -notify "s6-svc -h /var/run/s6/services/prometheus" /prometheus.yaml.tmpl /etc/prometheus/prometheus.yml
+
+s6-svc -h /var/run/s6/services/prometheus

@@ -1,0 +1,34 @@
+{{ $root := . }}
+
+global:
+  # How frequently to scrape targets by default.
+  scrape_interval: 1m
+
+{{- with $jobs := whereLabelExists $root "prom.enabled" }}
+{{- if $jobs }}
+scrape_configs:
+{{- range $job := $jobs }}
+  {{- if index $job.Labels "prom.enabled" | parseBool}}
+  {{- if contains $job.Labels "prom.job" }}
+  - job_name: {{ index $job.Labels "prom.job" }}
+  {{- else }}
+  - job_name: {{ $job.Name }}
+  {{- end }}
+    {{- if contains $job.Labels "prom.interval" }}
+    scrape_interval: {{ index $job.Labels "prom.interval" }}
+    {{ end }}
+    {{- if contains $job.Labels "prom.path" }}
+    metrics_path: {{ index $job.Labels "prom.path" }}
+    {{ end }}
+    static_configs:
+    {{- with $network := $job.Networks | first }}
+      - targets: [ {{ $network.IP }}:{{ index $job.Labels "prom.port" }} ]
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- else }}
+scrape_configs: []
+{{- end }}
+{{- end }}
+
+
