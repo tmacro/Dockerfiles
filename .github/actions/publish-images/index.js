@@ -14,60 +14,6 @@ async function docker_login(user, token) {
     }
 }
 
-async function get_git_tags() {
-    core.debug('Fetching git tags');
-    let tags = {};
-    const options = {
-        cwd: work_dir,
-        listeners: {
-            stdline: (line) => {
-                const parts = line.split('-v');
-                tags[parts[0]] = parts[1];
-            },
-            stderr: (buf) => core.debug(buf.toString()),
-        },
-    };
-    const ret_code = await exec.exec('git',
-        [
-            'tag',
-            '--points-at',
-            'HEAD',
-        ],
-        options
-    );
-    if (ret_code !== 0) {
-        throw Error('Failed to fetch git tags');
-    }
-    return tags;
-}
-
-async function get_git_ref() {
-    core.debug('Fetching git ref');
-    let ref = null;
-    const options = {
-        cwd: work_dir,
-        listeners: {
-            stdline: (line) => {
-                ref = line;
-            },
-            stderr: (buf) => core.debug(buf.toString()),
-        },
-    };
-    const ret_code = await exec.exec('git',
-        [
-            'show-ref',
-            '--hash',
-            'HEAD',
-        ],
-        options
-    );
-    if (ret_code !== 0 || ref === null) {
-        throw Error('Failed to fetch git ref');
-    }
-    return ref;
-}
-
-
 async function tag_image(repo, image, tag) {
     core.debug(`Tagging ${repo}/${image} with ${tag}`);
     const ret_code = await exec.exec('docker', [
@@ -129,7 +75,7 @@ async function main() {
     // const git_ref = await get_git_ref()
     // const short_ref = git_ref.slice(0, 7);
     await Promise.all(to_publish.map(image => add_tags(docker_username, image, short_ref, git_tags[image])));
-    await Promise.all(to_publish.map(image => publish_tags(docker_username, image)));
+    await Promise.all(to_publish.map(image => publish_tags(docker_username, image, short_ref, git_tags[image])));
 }
 
 run(main);
