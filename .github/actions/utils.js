@@ -5,10 +5,10 @@ const core = require('@actions/core');
 const exec = require('@actions/exec');
 const glob = require('@actions/glob');
 
-const constants = require('./constants');
-
 // Get the working directory
 const work_dir = process.env.GITHUB_WORKSPACE;
+
+// Get reference for triggering commit
 const git_ref = process.env.GITHUB_SHA;
 const short_ref = git_ref.slice(0, 7);
 
