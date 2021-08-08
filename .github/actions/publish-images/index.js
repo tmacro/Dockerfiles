@@ -91,11 +91,11 @@ async function remove_latest_tag(repo, image) {
     }
 }
 
-async function push_image(repo, image, tag = null) {
-    core.debug(`Pushing image ${repo}/${image}`);
+async function push_image(repo, image, tag) {
+    core.debug(`Pushing image ${repo}/${image}:${tag}`);
     const ret_code = await exec.exec('docker', [
         'push',
-        `${repo}/${image}`
+        `${repo}/${image}:${tag}`
     ]);
     if (ret_code !== 0) {
         throw Error(`Failed to push image ${repo}/${image}`);

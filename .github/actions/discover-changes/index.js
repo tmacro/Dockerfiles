@@ -1,7 +1,7 @@
 const Path = require('path');
 const fs = require('fs');
 
-const { core, exec, work_dir, run, get_images } = require('../utils');
+const { core, exec, work_dir, run, get_git_tags } = require('../utils');
 
 async function get_changes_for_commit(ref) {
     const paths = [];
@@ -102,7 +102,12 @@ async function get_changed_images() {
 async function main() {
     const changes = await get_changed_images();
     changes.map((i) => core.info(`Detected changes in image ${i}`));
-    core.setOutput('changes', JSON.stringify(changes));
+
+    const tagged = get_tagged_images();
+    tagged.forEach(i => console.debug(`Detected new tag for image ${i}`));
+
+    const unique = [...new Set([...changes, ...tagged])];
+    core.setOutput('changes', JSON.stringify(unique));
 }
 
 run(main);

@@ -4,7 +4,6 @@ const fs = require('fs');
 const core = require('@actions/core');
 const exec = require('@actions/exec');
 const glob = require('@actions/glob');
-const yaml = require('js-yaml');
 
 const constants = require('./constants');
 
@@ -26,70 +25,40 @@ function run(func) {
         });
 }
 
-async function load_image(name) {
-    const image_path = Path.join(work_dir, name);
-    const definition_path = Path.join(
-        image_path,
-        constants.DEFINITION_FILENAME
+async function get_git_tags() {
+    core.debug('Fetching git tags');
+    let tags = {};
+    const options = {
+        cwd: work_dir,
+        listeners: {
+            stdline: (line) => {
+                const parts = line.split('-v');
+                tags[parts[0]] = parts[1];
+            },
+            stderr: (buf) => core.debug(buf.toString()),
+        },
+    };
+    const ret_code = await exec.exec('git',
+        [
+            'tag',
+            '--points-at',
+            'HEAD',
+        ],
+        options
     );
-    const metadata = {
-        _name: name,
-        _self: definition_path,
-        _dir: image_path,
-    };
-    let loaded_config = {};
-    try {
-        core.debug(`Loading ${definition_path}`);
-        loaded_config = yaml.safeLoad(fs.readFileSync(definition_path, 'utf8')) || {};
-        core.debug(`Loaded ${JSON.stringify(loaded_config)}`);
-    } catch (e) {
-        if (e.code !== 'ENOENT') {
-            core.error(`Error while loading image ${e}`);
-        }
+    if (ret_code !== 0) {
+        throw Error('Failed to fetch git tags');
     }
-    return { ...metadata, ...loaded_config };
-}
-
-function hydrate_image(image) {
-    const image_defaults = {
-        name: image._name,
-        tag_latest: true,
-        tag_version: false,
-        version: '0.0',
-        deps: [],
-    };
-    return { ...image_defaults, ...image };
-}
-
-async function load_and_hydrate_image(name) {
-    const loaded = await load_image(name);
-    return hydrate_image(loaded);
-}
-
-async function get_images() {
-    const globber = await glob.create(`${work_dir}/*/Dockerfile`);
-    const dockerfiles = await globber.glob();
-    const images = [];
-    for (let i = 0; i < dockerfiles.length; i++) {
-        const image_name = Path.basename(Path.dirname(dockerfiles[i]));
-        const image = await load_and_hydrate_image(image_name);
-        core.debug(`Discovered image ${image.name}`);
-        images.push(image);
-    }
-    return images;
+    return tags;
 }
 
 module.exports = {
     core,
     exec,
     glob,
-    yaml,
     run,
     work_dir,
     git_ref,
     short_ref,
-    load_image,
-    hydrate_image,
-    load_and_hydrate_image,
-    get_images,
+    get_git_tags
 };
