@@ -4,26 +4,28 @@ global:
   # How frequently to scrape targets by default.
   scrape_interval: 1m
 
-{{- with $jobs := whereLabelExists $root "prom.enabled" }}
+{{- with $jobs := whereLabelExists $root "tc.prometheus.enabled" }}
 {{- if $jobs }}
 scrape_configs:
 {{- range $job := $jobs }}
-  {{- if index $job.Labels "prom.enabled" | parseBool}}
-  {{- if contains $job.Labels "prom.job" }}
-  - job_name: {{ index $job.Labels "prom.job" }}
+  {{- if index $job.Labels "tc.prometheus.enabled" | parseBool}}
+  {{- if contains $job.Labels "tc.prometheus.job" }}
+  - job_name: {{ index $job.Labels "tc.prometheus.job" }}
   {{- else }}
   - job_name: {{ $job.Name }}
   {{- end }}
-    {{- if contains $job.Labels "prom.interval" }}
-    scrape_interval: {{ index $job.Labels "prom.interval" }}
+    {{- if contains $job.Labels "tc.prometheus.interval" }}
+    scrape_interval: {{ index $job.Labels "tc.prometheus.interval" }}
     {{ end }}
-    {{- if contains $job.Labels "prom.path" }}
-    metrics_path: {{ index $job.Labels "prom.path" }}
+    {{- if contains $job.Labels "tc.prometheus.path" }}
+    metrics_path: {{ index $job.Labels "tc.prometheus.path" }}
     {{ end }}
     static_configs:
-    {{- with $network := $job.Networks | first }}
-      - targets: [ {{ $network.IP }}:{{ index $job.Labels "prom.port" }} ]
-    {{- end }}
+      {{- if contains $job.Labels "tc.prometheus.port" }}
+      - targets: [ {{ $job.Hostname }}:{{ index $job.Labels "tc.prometheus.port" }} ]
+      {{- else }}
+      - targets: [ {{ $job.Hostname }}:9213 ]
+      {{- end }}
   {{- end }}
 {{- end }}
 {{- else }}
