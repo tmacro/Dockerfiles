@@ -3,7 +3,6 @@ FROM prom/prometheus:v2.28.1 as prom
 FROM tmacro/base:1.0.0
 
 ENV DOCKERGEN_VERSION 0.7.7
-ENV CURL_VERSION 7.78.0
 
 COPY --from=prom /bin/prometheus /bin/prometheus
 COPY --from=prom /bin/promtool /bin/promtool
@@ -16,8 +15,7 @@ COPY --from=prom /npm_licenses.tar.bz2 /usr/share/prometheus/npm_licenses.tar.bz
 
 RUN wget https://github.com/nginx-proxy/docker-gen/releases/download/${DOCKERGEN_VERSION}/docker-gen-linux-amd64-${DOCKERGEN_VERSION}.tar.gz \
     && tar xvzf docker-gen-linux-amd64-${DOCKERGEN_VERSION}.tar.gz -C /bin/ \
-    && wget https://github.com/moparisthebest/static-curl/releases/download/v${CURL_VERSION}/curl-amd64 -O /bin/curl \
-    && chmod +x /bin/curl
+    && rm docker-gen-linux-amd64-${DOCKERGEN_VERSION}.tar.gz
 
 RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
 RUN mkdir -p /prometheus && \
