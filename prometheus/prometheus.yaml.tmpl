@@ -10,27 +10,37 @@ scrape_configs:
 {{- range $job := $jobs }}
   {{- if index $job.Labels "tc.prometheus.enabled" | parseBool}}
   {{- if contains $job.Labels "tc.prometheus.job" }}
-  - job_name: {{ index $job.Labels "tc.prometheus.job" }}
+  - job_name: '{{ index $job.Labels "tc.prometheus.job" }}'
   {{- else }}
   - job_name: {{ $job.Name }}
   {{- end }}
     {{- if contains $job.Labels "tc.prometheus.interval" }}
-    scrape_interval: {{ index $job.Labels "tc.prometheus.interval" }}
+    scrape_interval: '{{ index $job.Labels "tc.prometheus.interval" }}'
     {{ end }}
     {{- if contains $job.Labels "tc.prometheus.path" }}
-    metrics_path: {{ index $job.Labels "tc.prometheus.path" }}
+    metrics_path: '{{ index $job.Labels "tc.prometheus.path" }}'
     {{ end }}
     static_configs:
       {{- if contains $job.Labels "tc.prometheus.port" }}
-      - targets: [ {{ $job.Hostname }}:{{ index $job.Labels "tc.prometheus.port" }} ]
+      - targets: [ '{{ $job.Hostname }}:{{ index $job.Labels "tc.prometheus.port" }}' ]
       {{- else }}
-      - targets: [ {{ $job.Hostname }}:9213 ]
+      - targets: [ '{{ $job.Hostname }}:9213' ]
       {{- end }}
+    {{- if contains $job.Labels "tc.prometheus.params" }}
+    {{- with $label := index $job.Labels "tc.prometheus.params" }}
+    {{- with $params := split $label "," }}
+    params:
+      {{- range $param := $params }}
+      {{- with $_param := split $param ":" }}
+      {{ index $_param 0 }}: [ '{{ index $_param 1 }}' ]
+      {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- else }}
 scrape_configs: []
 {{- end }}
 {{- end }}
-
-
