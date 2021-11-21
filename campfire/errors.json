@@ -1,0 +1,18 @@
+{
+    "403": {
+        "code": "Forbidden",
+        "description": "Access Denied"
+    },
+    "404": {
+        "code": "Not Found",
+        "description": "The page your are looking for can not be found"
+    },
+    "502": {
+        "code": "Bad Gateway",
+        "description": ""
+    },
+    "503": {
+        "code": "Service Unavailable",
+        "description": ""
+    }
+}
