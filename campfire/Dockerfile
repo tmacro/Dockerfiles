@@ -12,6 +12,4 @@ FROM nginx:latest
 
 ADD ./nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=errors /error-gen/errors /usr/share/campfire/html
-
-# /usr/share/campire/errors
+COPY --from=errors /error-gen/errors /usr/share/campfire/errors
