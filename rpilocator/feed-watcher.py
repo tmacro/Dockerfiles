@@ -22,11 +22,12 @@ def fatal(msg, code=1):
     sys.exit(code)
 
 # Feed URL
-FEED_URL = 'https://rpilocator.com/feed/'
+DEFAULT_FEED_URL = 'https://rpilocator.com/feed/'
+FEED_URL = os.environ.get('FEED_URL', DEFAULT_FEED_URL)
 
 PUSHOVER_KEY = os.environ.get('PUSHOVER_USER_KEY')
 if PUSHOVER_KEY is None:
-    fatal('PUSHOVER_KEY is not defined')
+    fatal('PUSHOVER_USER_KEY is not defined')
 
 PUSHOVER_API_KEY = os.environ.get('PUSHOVER_API_KEY')
 if PUSHOVER_API_KEY is None:
