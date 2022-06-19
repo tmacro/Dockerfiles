@@ -71,12 +71,18 @@ def get_feed():
         for entry in f.entries:
             yield entry
 
-seen_entries = []
+log(f'Starting rpilocator watcher v{VERSION}.')
+log(f'Using FEED_URL => {FEED_URL}')
+log(f'Using USER_AGENT => {USER_AGENT}')
 
-log('Populating existing entries')
+log('Populating existing entries.')
+seen_entries = []
 for entry in get_feed():
     debug(f'Adding existing entry {entry.id}.')
     seen_entries.append(entry.id)
+
+if len(seen_entries) == 0:
+    log('No existing entries found.')
 
 log('Done populating existing entries. Sleeping 30 seconds.')
 time.sleep(30)
