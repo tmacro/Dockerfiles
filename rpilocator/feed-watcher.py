@@ -33,7 +33,7 @@ PUSHOVER_API_KEY = os.environ.get('PUSHOVER_API_KEY')
 if PUSHOVER_API_KEY is None:
     fatal('PUSHOVER_API_KEY is not defined')
 
-USER_AGENT = 'tmacs.cloud/rpilocator'
+USER_AGENT = 'tmacs.cloud/rpilocator:1.1.0'
 MESSAGE_TITLE = 'RPi Stock Alert'
 
 _auth_params = f'token={PUSHOVER_API_KEY}&user={PUSHOVER_KEY}&title={MESSAGE_TITLE}'
