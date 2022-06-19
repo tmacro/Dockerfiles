@@ -37,19 +37,17 @@ MESSAGE_TITLE = os.environ.get('MESSAGE_TITLE', DEFAULT_MESSAGE_TITLE)
 DEFAULT_FEED_URL = 'https://rpilocator.com/feed/'
 FEED_URL = os.environ.get('FEED_URL', DEFAULT_FEED_URL)
 
-PUSHOVER_KEY = os.environ.get('PUSHOVER_USER_KEY')
-if PUSHOVER_KEY is None:
-    fatal('PUSHOVER_USER_KEY is not defined')
+# Pushover user key
+PUSHOVER_USER_KEY = os.environ.get('PUSHOVER_USER_KEY')
+if PUSHOVER_USER_KEY is None:
+    fatal('PUSHOVER_USER_KEY is not defined.')
 
 # Pushover application API key
 PUSHOVER_API_KEY = os.environ.get('PUSHOVER_API_KEY')
 if PUSHOVER_API_KEY is None:
-    fatal('PUSHOVER_API_KEY is not defined')
+    fatal('PUSHOVER_API_KEY is not defined.')
 
-USER_AGENT = 'tmacs.cloud/rpilocator:1.1.0'
-MESSAGE_TITLE = 'RPi Stock Alert'
-
-_auth_params = f'token={PUSHOVER_API_KEY}&user={PUSHOVER_KEY}&title={MESSAGE_TITLE}'
+_auth_params = f'token={PUSHOVER_API_KEY}&user={PUSHOVER_USER_KEY}&title={MESSAGE_TITLE}'
 def formatMessage(entry):
     return f'{_auth_params}&message={entry.title}&url={entry.link}'
 
@@ -77,23 +75,23 @@ seen_entries = []
 
 log('Populating existing entries')
 for entry in get_feed():
-    debug(f'Adding existing entry {entry.id}')
+    debug(f'Adding existing entry {entry.id}.')
     seen_entries.append(entry.id)
 
 log('Done populating existing entries. Sleeping 30 seconds.')
 time.sleep(30)
 
-log('Starting refresh loop')
+log('Starting refresh loop.')
 while True:
-    log('Refreshing feed')
+    log('Refreshing feed.')
     found_new = False
     for entry in get_feed():
         if entry.id not in seen_entries:
-            log(f'Got new entry {entry.id}')
+            log(f'Got new entry {entry.id}.')
             message = formatMessage(entry)
             sendMessage(message)
             seen_entries.append(entry.id)
             found_new = True
     if not found_new:
-        log('No new entries found.')
+        debug('No new entries found.')
     time.sleep(59)
