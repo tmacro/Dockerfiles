@@ -53,17 +53,22 @@ def formatMessage(entry):
 
 # Send the push/message to all devices connected to Pushover
 def sendMessage(message):
+    error = None
     try:
         req = requests.post(url='https://api.pushover.net/1/messages.json', data=message, timeout=20)
     except requests.exceptions.Timeout:
-        log('Request Timeout')
+        error = 'Request Timeout'
         pass
     except requests.exceptions.TooManyRedirects:
-        log('Too many requests')
+        error = 'Too Many Requests'
         pass
     except requests.exceptions.RequestException as e:
-        log(e)
+        error = f'Request Error => {e}'
         pass
+    except Exception as e:
+        error = f'Unexpected Error => {e}'
+    if error:
+        log(f'Error sending notification: {error}.')
 
 def get_feed():
     f = feedparser.parse(FEED_URL, agent=USER_AGENT)
