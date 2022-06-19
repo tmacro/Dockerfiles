@@ -5,7 +5,8 @@ import os
 import sys
 from datetime import datetime
 
-DEBUG = False
+DEFAULT_DEBUG = False
+DEBUG = os.environ.get('DEBUG', DEFAULT_DEBUG) is not False
 
 def now():
     return datetime.now().isoformat()
@@ -21,6 +22,17 @@ def fatal(msg, code=1):
     log(f'[FATAL] {msg}')
     sys.exit(code)
 
+# Script version
+VERSION = '1.1.0'
+
+# User agent for feedparser
+DEFAULT_USER_AGENT = f'tmacs.cloud/rpilocator:{VERSION}'
+USER_AGENT = os.environ.get('USER_AGENT', DEFAULT_USER_AGENT)
+
+# Notification message title
+DEFAULT_MESSAGE_TITLE = 'RPi Stock Alert'
+MESSAGE_TITLE = os.environ.get('MESSAGE_TITLE', DEFAULT_MESSAGE_TITLE)
+
 # Feed URL
 DEFAULT_FEED_URL = 'https://rpilocator.com/feed/'
 FEED_URL = os.environ.get('FEED_URL', DEFAULT_FEED_URL)
@@ -29,6 +41,7 @@ PUSHOVER_KEY = os.environ.get('PUSHOVER_USER_KEY')
 if PUSHOVER_KEY is None:
     fatal('PUSHOVER_USER_KEY is not defined')
 
+# Pushover application API key
 PUSHOVER_API_KEY = os.environ.get('PUSHOVER_API_KEY')
 if PUSHOVER_API_KEY is None:
     fatal('PUSHOVER_API_KEY is not defined')
