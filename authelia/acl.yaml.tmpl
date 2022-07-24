@@ -10,17 +10,17 @@
     {{- range $container := $domain_services }}
         {{- range $label, $value := $container.Labels }}
             {{- if hasPrefix "authelia.acl.user" $label }}
-                {{- $subject := list "user" ($label | replace "authelia.acl.user" "") | join ":" }}
+                {{- $subject := list "user" ($label | replace "authelia.acl.user" "" 1) | join ":" }}
                 {{- $acl := dict "domain" $domain "policy" $value "subject" $subject }}
                 {{- $user_acls = append $user_acls $acl }}
             {{- end }}
             {{- if hasPrefix "authelia.acl.group" $label }}
-                {{- $subject := list "group" ($label | replace "authelia.acl.group" "") | join ":" }}
+                {{- $subject := list "group" ($label | replace "authelia.acl.group" "" 1) | join ":" }}
                 {{- $acl := dict "domain" $domain "policy" $value "subject" $subject }}
                 {{- $group_acls = append $group_acls $acl }}
             {{- end }}
             {{- if hasPrefix "authelia.acl.network" $label }}
-                {{- $network := $label | replace "authelia.acl.network" "" }}
+                {{- $network := $label | replace "authelia.acl.network" "" 1}}
                 {{- $acl := dict "domain" $domain "policy" $value "networks" (list $network) }}
                 {{- $network_acls = append $network_acls $acl }}
             {{- end }}
