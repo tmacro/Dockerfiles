@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -ex
+
+/usr/local/bin/yam /etc/authelia/base.yaml /etc/authelia/acl.yaml $AUTHELIA_EXTRA_CONFIG > /etc/authelia/configuration.yaml
+/usr/bin/supervisorctl -c /supervisord.conf restart authelia

@@ -1,0 +1,113 @@
+---
+theme: auto
+jwt_secret: null
+default_2fa_method: ""
+
+server:
+  host: 0.0.0.0
+  port: 9091
+  path: ""
+  read_buffer_size: 4096
+  write_buffer_size: 4096
+  disable_healthcheck: false
+
+log:
+  level: info
+
+totp:
+  disable: false
+  issuer: authelia.com
+  algorithm: sha1
+  digits: 6
+  period: 30
+  skew: 1
+  secret_size: 32
+
+webauthn:
+  disable: false
+  timeout: 60s
+  display_name: Authelia
+  attestation_conveyance_preference: indirect
+  user_verification: preferred
+
+duo_api:
+  disable: true
+
+ntp:
+  address: "time.cloudflare.com:123"
+  version: 4
+  max_desync: 3s
+  disable_startup_check: false
+  disable_failure: true
+
+authentication_backend:
+  disable_reset_password: false
+  refresh_interval: 1m
+  ldap:
+    implementation: custom
+    url: ldap://localhost:3890
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=example.com,dc=com
+    additional_users_dn: ou=people
+    users_filter: (&({username_attribute}={input})(objectClass=person))
+    additional_groups_dn: ou=groups
+    groups_filter: (member={dn})
+    group_name_attribute: cn
+    mail_attribute: mail
+    display_name_attribute: displayName
+    user: null
+    password: null
+
+password_policy:
+  standard:
+    enabled: false
+    min_length: 8
+    max_length: 0
+    require_uppercase: true
+    require_lowercase: true
+    require_number: true
+    require_special: true
+  zxcvbn:
+    enabled: false
+    min_score: 3
+
+access_control:
+  default_policy: deny
+
+session:
+  name: authelia_session
+  domain: null
+  same_site: lax
+  secret: null
+
+  expiration: 12h
+  inactivity: 1h
+  remember_me_duration: 1M
+
+regulation:
+  max_retries: 5
+  find_time: 2m
+  ban_time: 30m
+
+storage:
+  encryption_key: null
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  disable_startup_check: false
+
+  smtp:
+    host: null
+    port: null
+    timeout: 5s
+    username: null
+    password: null
+    sender: null
+    identifier: localhost
+    subject: "[Authelia] {title}"
+    startup_check_address: test@authelia.com
+    disable_require_tls: false
+    disable_html_emails: false
+...

@@ -1,0 +1,39 @@
+{{- $root := . }}
+{{- $default_policy := default $root.Env.AUTH_DEFAULT_POLICY "deny" }}
+
+{{- $all_acls := list }}
+{{- range $domain, $domain_services := groupByLabel $root "authelia.acl.domain" }}
+    {{- $user_acls := list }}
+    {{- $group_acls := list }}
+    {{- $network_acls := list }}
+    {{- $default_acls := list }}
+    {{- range $container := $domain_services }}
+        {{- range $label, $value := $container.Labels }}
+            {{- if hasPrefix "authelia.acl.user" $label }}
+                {{- $subject := list "user" ($label | replace "authelia.acl.user" "") | join ":" }}
+                {{- $acl := dict "domain" $domain "policy" $value "subject" $subject }}
+                {{- $user_acls = append $user_acls $acl }}
+            {{- end }}
+            {{- if hasPrefix "authelia.acl.group" $label }}
+                {{- $subject := list "group" ($label | replace "authelia.acl.group" "") | join ":" }}
+                {{- $acl := dict "domain" $domain "policy" $value "subject" $subject }}
+                {{- $group_acls = append $group_acls $acl }}
+            {{- end }}
+            {{- if hasPrefix "authelia.acl.network" $label }}
+                {{- $network := $label | replace "authelia.acl.network" "" }}
+                {{- $acl := dict "domain" $domain "policy" $value "networks" (list $network) }}
+                {{- $network_acls = append $network_acls $acl }}
+            {{- end }}
+            {{- if eq "authelia.acl.default" $label }}
+                {{- $acl := dict "domain" $domain "policy" $value }}
+                {{- $default_acls = append $default_acls $acl }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- $all_acls = concat $all_acls $user_acls $group_acls $network_acls $default_acls }}
+{{- end }}
+
+---
+access_control:
+  default_policy: {{ $default_policy }}
+  rules: {{ $all_acls | toJson }}
