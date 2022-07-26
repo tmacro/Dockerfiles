@@ -14,15 +14,19 @@ RUN pacman -Syu --noconfirm --needed --overwrite '*' \
 
 ADD https://github.com/pacman-repo-builder/pacman-repo-builder/releases/download/$PACMAN_REPO_BUILDER_VER/build-pacman-repo-x86_64-unknown-linux-gnu /usr/local/bin/build-pacman-repo
 
-RUN chmod +x /usr/local/bin/build-pacman-repo
+RUN chmod +x /usr/local/bin/build-pacman-repo \
+    && build-pacman-repo patch-makepkg --replace \
+    && mkdir /build
 
-RUN useradd -m -s /usr/bin/bash builder \
-    && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
-    && visudo -cs
+WORKDIR /build
 
-USER builder
+# RUN useradd -m -s /usr/bin/bash builder \
+#     && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+#     && visudo -cs
 
-WORKDIR /home/builder
+# USER builder
+
+# WORKDIR /home/builder
 
 ENTRYPOINT ["build-pacman-repo"]
 
