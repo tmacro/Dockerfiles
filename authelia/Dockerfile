@@ -16,3 +16,5 @@ ADD supervisord.conf /
 ADD base.yaml acl.yaml.tmpl /etc/authelia/
 
 CMD /usr/bin/supervisord -c /supervisord.conf
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=1m CMD /app/healthcheck.sh
