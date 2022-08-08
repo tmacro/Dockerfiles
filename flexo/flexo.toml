@@ -1,0 +1,156 @@
+# Note that flexo relies on the directory structure that is created in
+# /var/cache/flexo during install. If you change this setting, copy the
+# contents to the new directory and make sure user flexo has read- and
+# write-access.
+cache_directory = "/var/cache/flexo/pkg"
+
+# If the download speed falls below this threshold, a new mirror is selected,
+# hoping that the new mirror is faster than the previous one.
+# Notice that this limit is per connection, which is especially important if you
+# use pacman's ParallelDownloads feature. For example, if you set
+# ParallelDownloads = 5, then your bandwidth will be divided by 5. Make sure to
+# take this factor into account when setting the limit.
+# For example, if your ISP provides up to 100 MBit/s, and you expect not more
+# than 5 parallel downloads, and you expect your ISP to be able to provide at
+# least 50% of the promised bandwidth, then you could set something like:
+# 100 MBit/s * 50% / 5 = 10 MBit/s
+low_speed_limit_formatted = "2 MBit/s"
+
+# The timeout, in milliseconds, when connecting to a remote mirror.
+connect_timeout = 3000
+
+# After the mirrorlist was fetched from a remote JSON endpoint and the mirrors have
+# been tested and rated, the result (i.e., an ordered list of mirrors) will be persisted
+# on the local file system so that it can serve as a backup in case there is no internet
+# connectivity when flexo is started.
+mirrorlist_fallback_file = "/var/cache/flexo/state/mirrorlist"
+
+# The result of the latency tests are stored in a json file and retrieved when
+# Flexo is restarted.
+mirrorlist_latency_test_results_file = "/var/cache/flexo/state/latency_test_results.json"
+
+# The IP address to listen on.
+listen_ip_address = "0.0.0.0"
+
+# The port to listen on.
+port = 7878
+
+# The selection method to choose a mirror. Valid values are:
+#   "auto": Flexo will attempt to find suitable mirrors automatically.
+#           With this method, performance tests are run on the official mirrors
+#           to select only sufficiently fast mirrors.
+#   "predefined": To only choose the mirrors defined for the variable
+#                 mirrors_predefined (see below).
+mirror_selection_method = "auto"
+
+
+# The meaning of this variable depends on the mirror_selection_method:
+#   if mirror_selection_method = "auto", this list will be used as a fallback in
+#   case flexo was not able to obtain a list of all official mirrors.
+#   if mirror_selection_method = "predefined", flexo will only use mirrors from
+#   this list.
+# This list must not be empty if mirror_selection_method has been set to "predefined".
+# Mirrors in this list should NOT include the $repo/os/$arch suffix, so you should add
+# something like "http://archlinux.mirror.org/" or "https://mirror.org/archlinux/".
+mirrors_predefined = []
+
+# The number of versions kept in the cache. If set to a positive number, Flexo
+# will keep at most this many versions in the cache. If set to 0, packages will
+# be retained indefinitely.
+num_versions_retain = 5
+
+# If you use any custom repos, add them here. Notice that the URL does *not* include the $repo/$arch part.
+# You can list multiple repos by just adding multiple [[custom_repo]] entries.
+# Also adapt your pacman.conf to an entry like the following:
+# [archzfs]
+# Server = http://localhost:7878/custom_repo/archzfs/$repo/$arch
+#
+# [[custom_repo]]
+#     name = "archzfs"
+#     url = "https://archzfs.com"
+
+# Various settings that apply if mirror_selection_method has been set to "auto".
+[mirrors_auto]
+    # The URI of the JSON endpoint that delivers information about all official mirrors.
+    mirrors_status_json_endpoint = "https://archlinux.org/mirrors/status/json/"
+
+    # A list of fallback URIs that will be used if Flexo is unable to fetch and
+    # parse the JSON from the primary endpoint. Useful if the primary mirror is
+    # down for maintenance, or if the format was changed and Flexo has not yet
+    # been upgraded to parse the new format.
+    mirrors_status_json_endpoint_fallbacks = [
+        "https://raw.githubusercontent.com/nroi/archlinux-mirrors-status-fallback/main/mirrorlist.json",
+    ]
+
+    # The method to choose suitable mirrors automatically may not always work
+    # perfectly. If one of the automatically chosen mirrors turns out to be slow or
+    # unstable, add it to this list.
+    mirrors_blacklist = [ ]
+
+    # The maximum speed limit for all downloads. Leave it commented to allow
+    # flexo to utilize all available bandwidth.
+    # max_speed_limit = 102400
+    # only use mirrors with HTTPS support.
+    https_required = true
+
+    # mirrors must support IPv4.
+    ipv4 = true
+
+    # mirrors must support IPv6. Notice that this setting does not force
+    # connection establishment via IPv6, so having this setting enabled does not
+    # cause any issues on IPv4-only clients, and having it disabled does not
+    # guarantee that connections will be established via IPv4.
+    # Setting this to true can yield small benefits if your ISP uses "Dual Stack Lite",
+    # and frequently has issues with IPv4 connections, but it will also exlude many mirrors.
+    ipv6 = false
+
+    # The maximum score allowed from a mirror. See
+    # https://archlinux.org/mirrors/status/ for an explanation of this
+    # metric.
+    max_score = 2.5
+
+    # When Flexo is started for the first time, latency tests run against *all*
+    # mirrors, so the num_mirrors setting is ignored. The test results gained
+    # from this first latency test are then used when Flexo is started again:
+    # Instead of running the latency test against all mirrors from all
+    # locations, we only choose mirrors at a location that scored well in the
+    # previous latency test. For example: if num_mirrors is set to 3, and the
+    # fastest 3 mirrors from the previous latency test where located in Germany,
+    # France and Switzerland, then we will choose 3 mirrors from those 3
+    # locations in our next latency test.
+    # Increasing this parameter will also increase the startup time of flexo
+    # (due to the increased number of latency tests), but it might also give you
+    # a faster mirror.
+    num_mirrors = 8
+
+    # Valid values for this setting include "sort" and "random".  After the
+    # mirrors have been filtered according to your chosen criteria (e.g. ipv6
+    # supported, score not more than 2.5), you will most likely still have more
+    # than num_mirrors mirrors. This setting determines the strategy for
+    # choosing num_mirrors out of those mirrors. With "sort", the mirrors are
+    # sorted by their score and the first num_mirrors mirrors are selected. With
+    # "random", a random selection of num_mirrors are selected.  Choose "sort"
+    # if you want to increase the likelihood of having a fast and up-to-date
+    # mirror. Choose "random" if you want to avoid to always use the same
+    # mirror, and instead balance the load among many mirrors.
+    mirrors_random_or_sort = "sort"
+
+    # timeout, in milliseconds, when testing the mirrors' performance.
+    # Mirros which exceed the timeout will not be considered further, regardless
+    # of their score.
+    timeout = 350
+
+    refresh_latency_tests_after = "8 days"
+
+    # A list of 2-letter ISO country codes to restrict the selection to only
+    # choose mirrors located at those countries. If this list is empty or
+    # commented, the latency test will be run on mirrors from all locations.
+    # Ideally, you should include your own country and perhaps a few neighboring
+    # countries. For Example, users from Germany could set this to
+    # ["DE", "AT", "CH", "FR"], users from Australia should set this to
+    # just ["AU"].
+    # Notice that this setting only kicks in when the latency tests are run: If
+    # you change this setting, delete the file
+    # /var/cache/flexo/state/latency_test_results.json and restart Flexo so
+    # that the previous results are discarded and the latency tests run again.
+    allowed_countries = []
