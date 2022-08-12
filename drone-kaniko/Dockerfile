@@ -13,4 +13,4 @@ ADD ./bin /usr/local/bin
 
 RUN chmod -R 555 /usr/local/bin/
 
-ENTRYPOINT [ "/bin/plugin.sh" ]
+ENTRYPOINT [ "/usr/local/bin/plugin.sh" ]
