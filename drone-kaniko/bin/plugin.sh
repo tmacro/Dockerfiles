@@ -65,11 +65,11 @@ if [[ "${PLUGIN_AUTO_TAG:-}" == "true" ]]; then
 fi
 
 if [ -n "${PLUGIN_TAGS:-}" ]; then
-    DESTINATIONS=$(echo "${PLUGIN_TAGS}" | tr ',' '\n' | while read tag; do echo "--destination=${REGISTRY}/${PLUGIN_REPO}:${tag} "; done)
+    DESTINATIONS=$(echo "${PLUGIN_TAGS}" | tr ',' '\n' | while read tag; do echo "--destination=${REGISTRY}/${PLUGIN_REPO}/${PLUGIN_IMAGE}:${tag} "; done)
 elif [ -f .tags ]; then
-    DESTINATIONS=$(cat .tags| tr ',' '\n' | while read tag; do echo "--destination=${REGISTRY}/${PLUGIN_REPO}:${tag} "; done)
+    DESTINATIONS=$(cat .tags| tr ',' '\n' | while read tag; do echo "--destination=${REGISTRY}/${PLUGIN_REPO}/${PLUGIN_IMAGE}:${tag} "; done)
 elif [ -n "${PLUGIN_REPO:-}" ]; then
-    DESTINATIONS="--destination=${REGISTRY}/${PLUGIN_REPO}:latest"
+    DESTINATIONS="--destination=${REGISTRY}/${PLUGIN_REPO}/${PLUGIN_IMAGE}:latest"
 else
     DESTINATIONS="--no-push"
     # Cache is not valid with --no-push
@@ -79,7 +79,7 @@ fi
 # Write credentials file
 /usr/local/bin/credential-helper /kaniko/.docker/config.json
 
-exec /kaniko/executor -v ${LOG} \
+FLAGS="-v ${LOG} \
     --context=${CONTEXT} \
     --dockerfile=${DOCKERFILE} \
     ${EXTRA_OPTS} \
@@ -89,4 +89,8 @@ exec /kaniko/executor -v ${LOG} \
     ${CACHE_REPO:-} \
     ${TARGET:-} \
     ${BUILD_ARGS:-} \
-    ${BUILD_ARGS_FROM_ENV:-}
+    ${BUILD_ARGS_FROM_ENV:-}"
+
+echo "/kaniko/executor $FLAGS"
+
+exec /kaniko/executor $FLAGS
