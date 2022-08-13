@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec /bin/prometheus $@ ${PROM_EXTRA_ARGS}
