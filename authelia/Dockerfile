@@ -9,7 +9,7 @@ RUN wget https://github.com/jwilder/docker-gen/releases/download/${DOCKERGEN_VER
 RUN apk add --update --no-cache python3 py3-pip \
     && pip install supervisor pyyaml
 
-ADD yam apply-config /usr/local/bin/
+ADD yam apply-config start-authelia /usr/local/bin/
 
 ADD supervisord.conf /
 
