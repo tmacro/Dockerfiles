@@ -4,6 +4,18 @@ touch /etc/cloudserver/config.json
 
 /usr/local/bin/jam /usr/local/src/cloudserver/config.json /etc/cloudserver/overlay.json $CLOUDSERVER_EXTRA_CONFIG > /etc/cloudserver/config.json
 
+if [ -n "$CLOUDSERVER_EXTRA_LOCATION_CONFIG" ]; then
+    /usr/local/bin/jam /usr/local/src/cloudserver/locationConfig.json $CLOUDSERVER_EXTRA_LOCATION_CONFIG > /etc/cloudserver/locations.json
+else
+    cp /usr/local/src/cloudserver/locationConfig.json /etc/cloudserver/locations.json
+fi
+
+if [ -n "$CLOUDSERVER_AUTH_CONFIG" ]; then
+    cp $CLOUDSERVER_AUTH_CONFIG /etc/cloudserver/auth.json
+else
+    cp /usr/local/src/cloudserver/conf/authdata.json /etc/cloudserver/auth.json
+fi
+
 cd /usr/local/src/cloudserver
 
 exec /usr/local/bin/yarn start
