@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+
+import argparse
+import pathlib
+import sys
+from collections.abc import Iterable, Mapping
+from pprint import pprint
+from itertools import chain, zip_longest
+import json
+
+REF_TAG = '$ref'
+
+def _log(msg):
+    print(f':: {msg}', file=sys.stderr)
+
+def safe_read(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception as e:
+        print(e)
+    return None
+
+def _is_mapping(data):
+    return isinstance(data, Mapping)
+
+def _is_iterable(data):
+    return not isinstance(data, six.string_types) and isinstance(data, Iterable)
+
+def recurse_update(orig, new):
+    '''
+    Given a nested dict/list combo, walk each and update orig with new,
+    overwiting keys, and positions
+    '''
+    if orig is None:
+        return new
+    if new is None:
+        return orig
+    if type(orig) != type(new):
+        return new
+    # Check for strings specifically because they cause problems with lists
+    if isinstance(orig, str) and isinstance(new, str):
+        return new
+    if isinstance(orig, Mapping) and isinstance(new, Mapping):
+        return {
+            k: recurse_update(
+                orig.get(k),
+                new.get(k)
+            ) for k in set(
+                chain(
+                    orig.keys(),
+                    new.keys()
+                )
+            )
+        }
+    if isinstance(orig, Iterable) and isinstance(new, Iterable):
+        return [recurse_update(o, n) for o, n in zip_longest(orig, new)]
+    return new
+
+
+def _resolve_ref(parent_path, ref_path):
+    parent_path = pathlib.Path(parent_path)
+    ref_path = pathlib.Path(ref_path)
+    if ref_path.is_absolute():
+        if not ref_path.exists():
+            _log(f'Referenced absolute path does not exist {ref_path}')
+            _log(f'  in: {parent_path}')
+            sys.exit(1)
+        _log(f'Included reference {ref_path}')
+        _log(f'  in: {parent_path.name}')
+        import_path = ref_path
+
+    else: # is relative path
+        try:
+            resolved = parent_path.parent.joinpath(ref_path)
+        except ValueError:
+            _log(f'Referenced relative can not be resolved: {ref_path}')
+            _log(f'  in: {parent_path}')
+            sys.exit(1)
+        if not resolved.exists():
+            _log(f'Referenced relative path does not exist: {ref_path}')
+            _log(f'  resolved to: {resolved}')
+            _log(f'  in: {parent_path}')
+            sys.exit(1)
+        import_path = resolved
+        _log(f'Included reference: {ref_path}')
+        _log(f'  in: {parent_path.name}')
+        _log(f'  resolved to: {resolved}')
+
+    imported = safe_read(import_path)
+    if imported is None:
+        _log(f'Error reading referenced path {ref_path}!')
+        _log(f'  in: {parent_path}')
+        sys.exit(1)
+    return import_path, imported
+
+def _resolve_dict(parent_path, dikt):
+    for key, value in dikt.items():
+        if key == REF_TAG:
+            imported_path, imported = _resolve_ref(parent_path, value)
+            if _is_mapping(imported):
+                for _key, _value in _resolve_dict(imported_path, imported):
+                    yield _key, resolve_refs(imported_path, _value)
+            else:
+                _log(f'Reference resolved to list, expected dict!')
+                _log(f'  referenced path: {imported_path}')
+                _log(f'  in: {parent_path}')
+                sys.exit(1)
+        else:
+            yield key, resolve_refs(parent_path, value)
+
+def _resolve_list(parent_path, lst):
+    for value in lst:
+        if _is_mapping(value) and value.get(REF_TAG) is not None:
+            imported_path, imported = _resolve_ref(parent_path, value.get(REF_TAG))
+            yield resolve_refs(imported_path, imported)
+        else:
+            yield resolve_refs(parent_path, value)
+
+def resolve_refs(parent_path, doc):
+    if _is_mapping(doc):
+        return { k: v for k, v in _resolve_dict(parent_path, doc) }
+
+    if _is_mapping(doc):
+        return [v for v in _resolve_list(doc)]
+    return doc
+
+def path_type(arg):
+    return pathlib.Path(arg).resolve()
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        prog=pathlib.Path(sys.argv[0]).name,
+        description=''
+    )
+
+    parser.add_argument('paths', action='store', type=path_type, nargs='+', metavar='PATH', help='Document(s) for resolution and merging')
+    return parser.parse_args()
+
+def main():
+    args = get_args()
+    for path in args.paths:
+        if not path.exists():
+            print(f'{path} does not exist!')
+            sys.exit(1)
+    merged = {}
+    for path in args.paths:
+        _log(f'Merging document: {path.name}')
+        doc = safe_read(path)
+        merged = recurse_update(merged, resolve_refs(path, doc))
+    json.dump(merged, sys.stdout)
+
+if __name__ == '__main__':
+    main()

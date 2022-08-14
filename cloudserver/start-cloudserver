@@ -1,0 +1,9 @@
+#!/bin/sh
+
+touch /etc/cloudserver/config.json
+
+/usr/local/bin/jam /usr/local/src/cloudserver/config.json /etc/cloudserver/overlay.json $CLOUDSERVER_EXTRA_CONFIG > /etc/cloudserver/config.json
+
+cd /usr/local/src/cloudserver
+
+exec /usr/local/bin/yarn start

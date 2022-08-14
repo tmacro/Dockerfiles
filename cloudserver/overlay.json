@@ -1,0 +1,9 @@
+{
+    "port": 8000,
+    "listenOn": ["0.0.0.0:8000"],
+    "clusters": 1,
+    "log": {
+        "logLevel": "info",
+        "dumpLevel": "error"
+    }
+}
