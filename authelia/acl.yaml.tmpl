@@ -10,25 +10,31 @@ access_control:
             {{- $domain := $value }}
             {{- $aclName := $label | trimPrefix "authelia.acl." | trimSuffix ".domain" }}
             {{- $aclUserPrefix := printf "authelia.acl.%s.user." $aclName }}
-            {{- $aclGroupPrefix := printf "authelia.acl.%s.group." $aclName }}
-            {{- $aclNetworkPrefix := printf "authelia.acl.%s.network." $aclName }}
-            {{- $aclDefaultLabel := printf "authelia.acl.%s.default" $aclName }}
             {{- range $aclLabel, $aclValue := $container.Labels }}
                 {{- if hasPrefix  $aclUserPrefix $aclLabel }}
                     {{- $subject := list "user" (trimPrefix $aclUserPrefix $aclLabel) | join ":" }}
                     {{- $acl := dict "domain" $domain "policy" $aclValue "subject" $subject }}
                     {{- printf "- %s" ($acl | toJson) | nindent 4 }} # {{ $aclName }}
                 {{- end }}
+            {{- end }}
+            {{- $aclGroupPrefix := printf "authelia.acl.%s.group." $aclName }}
+            {{- range $aclLabel, $aclValue := $container.Labels }}
                 {{- if hasPrefix $aclGroupPrefix $aclLabel }}
                     {{- $subject := list "group" (trimPrefix $aclGroupPrefix $aclLabel) | join ":" }}
                     {{- $acl := dict "domain" $domain "policy" $aclValue "subject" $subject }}
                     {{- printf "- %s" ($acl | toJson) | nindent 4 }} # {{ $aclName }}
                 {{- end }}
+            {{- end }}
+            {{- $aclNetworkPrefix := printf "authelia.acl.%s.network." $aclName }}
+            {{- range $aclLabel, $aclValue := $container.Labels }}
                 {{- if hasPrefix $aclNetworkPrefix $aclLabel }}
                     {{- $network := trimPrefix $aclNetworkPrefix $aclLabel }}
                     {{- $acl := dict "domain" $domain "policy" $aclValue "networks" (list $network) }}
                     {{- printf "- %s" ($acl | toJson) | nindent 4 }} # {{ $aclName }}
                 {{- end }}
+            {{- end }}
+            {{- $aclDefaultLabel := printf "authelia.acl.%s.default" $aclName }}
+            {{- range $aclLabel, $aclValue := $container.Labels }}
                 {{- if eq $aclDefaultLabel $aclLabel }}
                     {{- $acl := dict "domain" $domain "policy" $aclValue }}
                     {{- printf "- %s" ($acl | toJson) | nindent 4 }} # {{ $aclName }}
