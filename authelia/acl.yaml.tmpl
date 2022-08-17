@@ -1,5 +1,5 @@
 {{- $root := . }}
-{{- $default_policy := default $root.Env.AUTH_DEFAULT_POLICY "deny" }}
+{{- $default_policy := default "deny" $root.Env.AUTH_DEFAULT_POLICY }}
 ---
 access_control:
   default_policy: {{ $default_policy }}
