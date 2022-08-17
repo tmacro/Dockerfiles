@@ -1,8 +1,9 @@
 {{ $root := . }}
-
+{{- $defaultInterval := default "1m" $root.Env.DEFAULT_SCRAPE_INTERVAL -}}
+---
 global:
   # How frequently to scrape targets by default.
-  scrape_interval: 1m
+  scrape_interval: {{ $defaultInterval }}
 
 {{- with $jobs := whereLabelExists $root "tc.prometheus.enabled" }}
 {{- if $jobs }}
@@ -21,11 +22,9 @@ scrape_configs:
     metrics_path: '{{ index $job.Labels "tc.prometheus.path" }}'
     {{ end }}
     static_configs:
-      {{- if contains $job.Labels "tc.prometheus.port" }}
-      - targets: [ '{{ $job.Hostname }}:{{ index $job.Labels "tc.prometheus.port" }}' ]
-      {{- else }}
-      - targets: [ '{{ $job.Hostname }}:9213' ]
-      {{- end }}
+      {{- $promHost := default $job.Hostname (index $job.Labels "tc.prometheus.host") }}
+      {{- $promPort := default "9213" (index $job.Labels "tc.prometheus.port") }}
+      - targets: {{ list (printf "%s:%s" $promHost $promPort) | toJson }}
     {{- if contains $job.Labels "tc.prometheus.params" }}
     {{- with $label := index $job.Labels "tc.prometheus.params" }}
     {{- with $params := split $label "," }}
