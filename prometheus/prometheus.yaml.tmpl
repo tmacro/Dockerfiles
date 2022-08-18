@@ -5,7 +5,7 @@ global:
   # How frequently to scrape targets by default.
   scrape_interval: {{ $defaultInterval }}
 
-{{- with $jobs := whereLabelExists $root "tc.prometheus.enabled" }}
+{{ with $jobs := whereLabelExists $root "tc.prometheus.enabled" }}
 {{- if $jobs }}
 scrape_configs:
 {{- range $job := $jobs }}
@@ -17,14 +17,16 @@ scrape_configs:
   {{- end }}
     {{- if contains $job.Labels "tc.prometheus.interval" }}
     scrape_interval: '{{ index $job.Labels "tc.prometheus.interval" }}'
-    {{ end }}
+    {{- end }}
     {{- if contains $job.Labels "tc.prometheus.path" }}
     metrics_path: '{{ index $job.Labels "tc.prometheus.path" }}'
-    {{ end }}
+    {{- end }}
+    {{- if contains $job.Env "TC_PROMETHEUS_BEARER_TOKEN" }}
+    authorization:
+      type: Bearer
+      credentials: "{{ $job.Env.TC_PROMETHEUS_BEARER_TOKEN }}"
+    {{- end }}
     static_configs:
-      {{- if contains $job.Env "TC_PROMETHEUS_BEARER_TOKEN" }}
-      bearer_token: "{{ $job.Env.TC_PROMETHEUS_BEARER_TOKEN }}"
-      {{- end }}
       {{- $promHost := default $job.Hostname (index $job.Labels "tc.prometheus.host") }}
       {{- $promPort := default "9213" (index $job.Labels "tc.prometheus.port") }}
       - targets: {{ list (printf "%s:%s" $promHost $promPort) | toJson }}
