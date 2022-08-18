@@ -22,6 +22,9 @@ scrape_configs:
     metrics_path: '{{ index $job.Labels "tc.prometheus.path" }}'
     {{ end }}
     static_configs:
+      {{- if contains $job.Env "TC_PROMETHEUS_BEARER_TOKEN" }}
+      bearer_token: "{{ $job.Env.TC_PROMETHEUS_BEARER_TOKEN }}"
+      {{- end }}
       {{- $promHost := default $job.Hostname (index $job.Labels "tc.prometheus.host") }}
       {{- $promPort := default "9213" (index $job.Labels "tc.prometheus.port") }}
       - targets: {{ list (printf "%s:%s" $promHost $promPort) | toJson }}
