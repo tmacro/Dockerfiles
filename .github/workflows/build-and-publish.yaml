@@ -1,8 +1,13 @@
 name: Images
 
 on:
-  - push
-
+  push:
+    branches:
+      - master
+      # For when we're swapped
+      # - trunk
+    tags:
+      - '*-v*'
 jobs:
   build_and_publish:
     name: Build and Publish
