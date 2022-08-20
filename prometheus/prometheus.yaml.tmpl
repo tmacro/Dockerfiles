@@ -1,9 +1,11 @@
 {{ $root := . }}
 {{- $defaultInterval := default "1m" $root.Env.DEFAULT_SCRAPE_INTERVAL -}}
+{{- $defaultScrapeTimeout := default "10s" $root.Env.DEFAULT_SCRAPE_TIMEOUT -}}
 ---
 global:
   # How frequently to scrape targets by default.
   scrape_interval: {{ $defaultInterval }}
+  scrape_timeout: {{ $defaultScrapeTimeout }}
 
 {{ with $jobs := whereLabelExists $root "tc.prometheus.enabled" }}
 {{- if $jobs }}
@@ -17,6 +19,9 @@ scrape_configs:
   {{- end }}
     {{- if contains $job.Labels "tc.prometheus.interval" }}
     scrape_interval: '{{ index $job.Labels "tc.prometheus.interval" }}'
+    {{- end }}
+    {{- if contains $job.Labels "tc.prometheus.timeout" }}
+    scrape_timeout: {{ index $job.Labels "tc.prometheus.timeout" }}
     {{- end }}
     {{- if contains $job.Labels "tc.prometheus.path" }}
     metrics_path: '{{ index $job.Labels "tc.prometheus.path" }}'
