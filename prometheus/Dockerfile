@@ -22,17 +22,20 @@ RUN wget https://github.com/jwilder/docker-gen/releases/download/${DOCKERGEN_VER
     && tar -C /usr/bin -xvzf /tmp/dockergen.tar.gz \
     && rm /tmp/dockergen.tar.gz
 
-RUN apk add --update --no-cache python3 py3-pip \
-    && pip install supervisor
+RUN apk add --update --no-cache python3 py3-pip curl git \
+    && pip install supervisor jam-tool[yaml]
+
+# RUN git clone https://github.com/tmacro/jam  /usr/local/src/jam \
+#     && pip install /usr/local/src/jam[yaml]
 
 ADD supervisord.conf /
 
-ADD ./prometheus.yaml.tmpl /
+ADD stub.yaml prometheus.yaml.tmpl /etc/prometheus/
 
-ADD ./prometheus-wrapper ./reload-prom /usr/local/bin/
+ADD ./bin /usr/local/bin/
 
-RUN chmod +x /usr/local/bin//prometheus-wrapper /usr/local/bin/reload-prom
+RUN chmod +x /usr/local/bin/prometheus-wrapper.sh /usr/local/bin/reload-prom.sh /usr/local/bin/prom-healthcheck.sh
+
+HEALTHCHECK --interval=30s --timeout=3s CMD /usr/local/bin/prom-healthcheck.sh
 
 CMD /usr/bin/supervisord -c /supervisord.conf
-
-# HEALTHCHECK --interval=30s --timeout=3s --start-period=1m CMD /app/healthcheck.sh
