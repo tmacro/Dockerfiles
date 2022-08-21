@@ -10,4 +10,4 @@ fi
 
 TO_JAM="$TO_JAM $PROM_EXTRA_CONFIG"
 
-/usr/bin/jam -vvv -o /etc/prometheus/prometheus.yaml $TO_JAM
+/usr/bin/jam  -vvv --array-strategy=extend $TO_JAM -o /etc/prometheus/prometheus.yaml
