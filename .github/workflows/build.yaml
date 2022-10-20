@@ -1,7 +1,11 @@
 name: build
 
 on:
-  push: {}
+  push:
+    branches:
+      - trunk
+    tags:
+      - '*-v*'
   workflow_dispatch:
     inputs:
       ref:
@@ -9,10 +13,6 @@ on:
         required: false
         default: HEAD
         description: Reference to build
-    # branches:
-    #   - trunk
-    # tags:
-    #   - '*-v*'
 jobs:
   images:
     env:
