@@ -1,0 +1,26 @@
+#!/usr/bin/with-contenv sh
+
+export MALLOC_ARENA_MAX=1
+
+JAVA="/usr/bin/java"
+WARP10_JAR=${WARP10_HOME}/bin/warp10-${WARP10_VERSION}.jar
+WARP10_CLASS=io.warp10.standalone.Warp
+WARP10_CP="${WARP10_HOME}/etc:${WARP10_JAR}:${WARP10_HOME}/lib/*"
+WARP10_CONFIG_DIR="$WARP10_DATA_DIR/conf"
+CONFIG_FILES="$(find ${WARP10_CONFIG_DIR} -not -path '*/.*' -name '*.conf' | sort | tr '\n' ' ' 2> /dev/null)"
+LOG4J_CONF=${WARP10_HOME}/etc/log4j.properties
+
+if [ -z "$WARP10_HEAP" ]; then
+    WARP10_HEAP=1g
+fi
+
+if [ -z "$WARP10_HEAP_MAX" ]; then
+    WARP10_HEAP_MAX=4g
+fi
+
+JAVA_OPTS="-Dlog4j.configuration=file:${LOG4J_CONF} ${JAVA__EXTRA_OPTS} -Djava.awt.headless=true -Xms${WARP10_HEAP} -Xmx${WARP10_HEAP_MAX} -XX:+UseG1GC"
+
+WARP10_CMD="${JAVA} ${JAVA_OPTS} -cp ${WARP10_CP} ${WARP10_CLASS} ${CONFIG_FILES}"
+
+echo "Starting Warp 10 with $WARP10_CMD ..."
+exec $WARP10_CMD 

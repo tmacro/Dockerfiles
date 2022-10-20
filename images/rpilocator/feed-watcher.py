@@ -71,6 +71,7 @@ def sendMessage(message):
         log(f'Error sending notification: {error}.')
 
 def get_feed():
+    return []
     f = feedparser.parse(FEED_URL, agent=USER_AGENT)
     if f.entries:
         for entry in f.entries:

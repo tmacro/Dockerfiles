@@ -1,0 +1,8 @@
+= Authelia
+
+Packages Authelia and dockergen to provide automatic acl configuration generation based on container labels.
+
+== Upstream Projects
+
+* Authelia https://www.authelia.com/
+* dockergen https://github.com/nginx-proxy/docker-gen

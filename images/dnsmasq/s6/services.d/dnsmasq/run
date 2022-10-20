@@ -1,0 +1,3 @@
+#!/command/execlineb -P
+
+dnsmasq --config-file /etc/dnsmaq.conf

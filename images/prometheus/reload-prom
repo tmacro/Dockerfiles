@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/bin/supervisorctl -c /supervisord.conf signal SIGHUP prometheus
