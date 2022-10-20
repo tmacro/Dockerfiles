@@ -36,4 +36,4 @@ jobs:
         run: pip install --user git+https://github.com/tmacro/shoreman.git
 
       - name: Print changes
-        run: shoreman changes
+        run: shoreman --verbose changes
