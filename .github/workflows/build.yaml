@@ -37,3 +37,6 @@ jobs:
 
       - name: Print changes
         run: shoreman --verbose changes
+
+      - name: Build and push images
+        run: shoreman build --push
