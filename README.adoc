@@ -1,0 +1,14 @@
+= tmacro/Dockerfiles
+
+A ragtag collection of scripts, repackaged applications, and at least one eldrich horror of a Go template.
+
+:source-highlighter: rouge
+:toc:
+
+== Repo Structure
+
+== Building
+
+== Images
+
+include::images/authelia/README.adoc[leveloffset=+2]
