@@ -16,7 +16,7 @@ on:
 jobs:
   images:
     env:
-      REF: ${{ inputs.ref || "HEAD" }}
+      REF: ${{ inputs.ref }}
     name: build images
     runs-on: ubuntu-latest
     steps:
