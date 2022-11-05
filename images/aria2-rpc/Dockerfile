@@ -5,7 +5,7 @@ ENV RPC_SECRET insecure
 ENV RPC_PORT 6800
 ENV DOWNLOAD_DIR /data
 
-RUN apk add --update --no-cache aria2
+RUN apk add --update --no-cache aria2 rclone
 
 ADD ./entrypoint.sh /
 
