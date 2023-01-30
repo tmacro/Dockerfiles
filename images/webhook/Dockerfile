@@ -23,6 +23,8 @@ RUN chmod +x /tini
 
 COPY --from=builder /build/webhook /usr/bin/webhook
 
+RUN apk add --no-cache --update python3
+
 ENTRYPOINT ["/tini", "--"]
 
 CMD ["/usr/bin/webhook", "-verbose", "-hooks", "/hooks/hooks.yaml"]
