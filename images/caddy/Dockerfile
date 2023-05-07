@@ -15,6 +15,10 @@ RUN xcaddy build ${CADDY_VERSION} --with github.com/caddy-dns/cloudflare
 
 FROM alpine
 
+ENV XDG_DATA_HOME /data
+
+ENV XDG_CONFIG_HOME /config
+
 COPY --from=builder /go/caddy /usr/bin/caddy
 
 ENTRYPOINT ["/usr/bin/caddy"]
