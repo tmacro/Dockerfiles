@@ -30,6 +30,6 @@ fi
 while true; do
     echo "[$(date -Iseconds)] Refreshing mirrorlist..."
     reflector $REFLECTOR_ARGS
-    echo "[$(date -Iseconds)] Sleeping for $INTERVAL..."
-    sleep $INTERVAL
+    echo "[$(date -Iseconds)] Sleeping for $REFLECTOR_INTERVAL..."
+    sleep $REFLECTOR_INTERVAL
 done
