@@ -4,10 +4,6 @@
 
 set -e
 
-if [ -z "$REFLECTOR_INTERVAL" ]; then
-    INTERVAL="6h"
-fi
-
 if [ -z "$REFLECTOR_ARGS" ]; then
     REFLECTOR_ARGS="-c US --sort rate -l 10 -p https"
 fi
@@ -15,6 +11,8 @@ fi
 if [ -z "$REFLECTOR_FILE" ]; then
     REFLECTOR_FILE="/opt/reflector/mirrorlist"
 fi
+
+REFLECTOR_ARGS="$REFLECTOR_ARGS --save $REFLECTOR_FILE"
 
 if [ ! -d "$(dirname $REFLECTOR_FILE)" ]; then
     mkdir -p "$(dirname $REFLECTOR_FILE)"
@@ -24,9 +22,14 @@ if [ ! -f "$REFLECTOR_FILE" ]; then
     touch "$REFLECTOR_FILE"
 fi
 
+if [ -z "$REFLECTOR_INTERVAL" ]; then
+    reflector $REFLECTOR_ARGS
+    exit 0
+fi
+
 while true; do
     echo "[$(date -Iseconds)] Refreshing mirrorlist..."
-    reflector $REFLECTOR_ARGS > $REFLECTOR_FILE
+    reflector $REFLECTOR_ARGS
     echo "[$(date -Iseconds)] Sleeping for $INTERVAL..."
     sleep $INTERVAL
 done
