@@ -26,4 +26,4 @@ COPY --from=builder /go/caddy /usr/bin/caddy
 
 ENTRYPOINT ["/usr/bin/caddy"]
 
-CMD ["run"]
+CMD ["docker-proxy"]
