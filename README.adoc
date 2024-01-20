@@ -26,8 +26,8 @@ Building single images requires no tools other docker:
 
 [source,shell]
 ----
-# cd images/authelia
-# docker build -t authelia .
+cd images/authelia
+docker build -t authelia .
 ----
 
 == Images
