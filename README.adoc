@@ -8,16 +8,27 @@ A ragtag collection of scripts, repackaged applications, and at least one eldric
 == Repo Structure
 
 Images are defined in a subdirectory of `images/` with the directory name being the name of the image.
+An image is expected to contain a Dockerfile in the root of its directory.
+Per image configuration for shoreman can be specified in a `image.conf` in the root of an image's directory.
 
 ....
 images/
-├── ariang
 ├── authelia
-├── base
+│   └── Dockerfile
+└── technitium-dns
+    ├── Dockerfile
+    └── image.conf
 ....
 
-
 == Building
+
+Building single images requires no tools other docker:
+
+[source,shell]
+----
+# cd images/authelia
+# docker build -t authelia .
+----
 
 == Images
 

@@ -8,4 +8,4 @@ A from source build of the server along with some prepackaged apps.
 
 == Usage
 
-See https://github.com/TechnitiumSoftware/DnsServer/blob/master/DockerEnvironmentVariables.md for documentation on configuration using environment variables.
+See the https://github.com/TechnitiumSoftware/DnsServer/blob/master/DockerEnvironmentVariables.md[upstream documentation] for info on configuration using environment variables.
