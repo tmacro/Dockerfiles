@@ -1,0 +1,11 @@
+= Technitium DNS Server
+
+A from source build of the server along with some prepackaged apps.
+
+== Upstream Projects
+
+* Technitium DNS Server https://technitium.com/dns/
+
+== Usage
+
+See https://github.com/TechnitiumSoftware/DnsServer/blob/master/DockerEnvironmentVariables.md for documentation on configuration using environment variables.

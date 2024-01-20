@@ -7,8 +7,19 @@ A ragtag collection of scripts, repackaged applications, and at least one eldric
 
 == Repo Structure
 
+Images are defined in a subdirectory of `images/` with the directory name being the name of the image.
+
+....
+images/
+├── ariang
+├── authelia
+├── base
+....
+
+
 == Building
 
 == Images
 
 include::images/authelia/README.adoc[leveloffset=+2]
+include::images/technitium-dns/README.adoc[leveloffset=+2]
