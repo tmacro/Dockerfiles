@@ -1,7 +1,7 @@
 FROM golang:alpine as builder
 
-ARG XCADDY_VERSION=v0.3.5
-ARG CADDY_VERSION=v2.7.5
+ARG XCADDY_VERSION=v0.4.2
+ARG CADDY_VERSION=v2.8.4
 
 RUN apk add --update git
 
