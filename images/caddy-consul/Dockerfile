@@ -12,7 +12,7 @@ RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}
 # Build caddy
 
 RUN xcaddy build ${CADDY_VERSION} \
-    --with github.com/tmacro/caddy-consul@v0.0.10-preview.1 \
+    --with github.com/tmacro/caddy-consul@v0.0.10-preview.2 \
     --with github.com/pteich/caddy-tlsconsul@v1.5.0 \
     --with github.com/caddy-dns/cloudflare@v0.2.1
 
